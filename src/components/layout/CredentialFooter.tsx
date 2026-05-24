@@ -1,17 +1,8 @@
 import { Badge } from "@/components/ui/badge";
+import config from "@/data/config.json";
+import type { LinkNode } from "@/types/data";
 
-const LINKS = [
-  {
-    id: "whatsapp",
-    label: "INITIATE_CONTACT // WHATSAPP",
-    href: "https://wa.me/",
-  },
-  {
-    id: "linkedin",
-    label: "VERIFY_PROFILE // LINKEDIN",
-    href: "https://linkedin.com/in/",
-  },
-];
+const LINKS = config.links as LinkNode[];
 
 export default function CredentialFooter() {
   return (
@@ -47,10 +38,10 @@ export default function CredentialFooter() {
 
           {/* ── Right: Direct Access Links ── */}
           <div className="flex flex-col sm:flex-row gap-3 md:justify-end">
-            {LINKS.map(({ id, label, href }) => (
+            {LINKS.map((link) => (
               <a
-                key={id}
-                href={href}
+                key={link.id}
+                href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase text-muted-foreground transition-colors duration-150 hover:text-accent"
@@ -59,7 +50,7 @@ export default function CredentialFooter() {
                   className="inline-block h-1 w-1 rounded-full bg-muted-foreground transition-colors duration-150 group-hover:bg-accent"
                   aria-hidden="true"
                 />
-                {label}
+                {link.label}
               </a>
             ))}
           </div>

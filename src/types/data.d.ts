@@ -21,8 +21,24 @@ export interface ProjectLab {
   terminalPayload: string;
 }
 
+export interface OperationalDeployment {
+  id: string;
+  role: string;
+  organization: string;
+  timeline: string;
+  metrics: string[];
+}
+
+export interface LinkNode {
+  id: string;
+  label: string;
+  href: string;
+}
+
 export interface RootConfig {
   telemetry: SystemTelemetry;
   services: ServiceMatrix[];
+  deployments: OperationalDeployment[];
   labs: ProjectLab[];
+  links: LinkNode[];
 }

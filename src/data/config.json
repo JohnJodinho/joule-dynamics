@@ -9,22 +9,61 @@
       "id": "rag",
       "title": "Agentic RAG",
       "description": "Reasoning-heavy architectures for zero-hallucination compliance engines.",
-      "stack": ["Python", "FastAPI", "VectorDB", "LangChain"],
+      "stack": [
+        "Python",
+        "FastAPI",
+        "VectorDB",
+        "LangChain"
+      ],
       "roiVector": "Reduces manual lookup latency by 94%"
     },
     {
       "id": "scraping",
       "title": "Resilient Scraping Pipelines",
       "description": "Enterprise data pipelines handling high-density target extraction with automatic proxy-rotation, TLS fingerprint emulation, and explicit bypass of Datadome, Cloudflare, and PerimeterX enterprise-grade bot defenses.",
-      "stack": ["TypeScript", "Playwright", "BrightData", "Celery"],
+      "stack": [
+        "TypeScript",
+        "Playwright",
+        "BrightData",
+        "Celery"
+      ],
       "roiVector": "Extracts 10k–50k records/hr · 99.8% bypass rate on enterprise scraper defenses"
     },
     {
       "id": "infra",
       "title": "AI Infrastructure",
       "description": "Autonomous agent workflows injected directly into existing enterprise stacks.",
-      "stack": ["Docker", "Kubernetes", "Redis", "Azure AI"],
+      "stack": [
+        "Docker",
+        "Kubernetes",
+        "Redis",
+        "Azure AI"
+      ],
       "roiVector": "Scales to 10k concurrent reasoning operations"
+    }
+  ],
+  "deployments": [
+    {
+      "id": "realm-logistics",
+      "role": "Systems Architect",
+      "organization": "REAL-M Project",
+      "timeline": "April 2026 - Present",
+      "metrics": [
+        "Designed a decision-intelligence platform for downstream oil & gas logistics.",
+        "Engineered regional energy arbitrage calculation pipelines.",
+        "Integrated real-time supply chain telemetry for predictive resource allocation."
+      ]
+    },
+    {
+      "id": "zibeh-institute",
+      "role": "Lead AI Instructor",
+      "organization": "Zibeh Institute & 3MTT Programme",
+      "timeline": "2024 - Present",
+      "metrics": [
+        "Facilitated intensive AI and machine learning bootcamps for technical cohorts.",
+        "Structured curriculum focused on production-ready AI orchestration and deployment.",
+        "Mentored developers transitioning into backend and data engineering tracks."
+      ]
     }
   ],
   "labs": [
@@ -33,7 +72,13 @@
       "title": "SentimentScope",
       "category": "Agentic RAG",
       "liveUrl": "https://sentimentscope.demo",
-      "architecture": ["FastAPI", "React", "Pinecone", "OpenAI", "WAHA API"],
+      "architecture": [
+        "FastAPI",
+        "React",
+        "Pinecone",
+        "OpenAI",
+        "WAHA API"
+      ],
       "terminalPayload": "{\n  \"status\": 200,\n  \"engine\": \"async-rag-v2\",\n  \"source\": \"whatsapp_export\",\n  \"tokens_processed\": 184320,\n  \"chunks_indexed\": 2048,\n  \"insight\": \"High churn probability detected across 3 sentiment clusters.\",\n  \"confidence\": 0.97,\n  \"latency_ms\": 312,\n  \"waha_api\": \"CONNECTED\"\n}"
     },
     {
@@ -41,8 +86,25 @@
       "title": "Enterprise Market Scraper",
       "category": "Enterprise Scraping",
       "liveUrl": "https://scraper.demo",
-      "architecture": ["Python", "Playwright", "BrightData", "Rotating Proxies"],
+      "architecture": [
+        "Python",
+        "Playwright",
+        "BrightData",
+        "Rotating Proxies"
+      ],
       "terminalPayload": "{\n  \"target\": \"competitor-pricing\",\n  \"records_extracted\": 47800,\n  \"extraction_rate\": \"12,400 records/hr\",\n  \"proxy_rotations\": 1140,\n  \"tls_fingerprint\": \"CHROME_120_EMULATED\",\n  \"bypass_status\": \"SUCCESS\",\n  \"defenses_bypassed\": [\"Datadome\", \"Cloudflare\", \"PerimeterX\"]\n}"
+    }
+  ],
+  "links": [
+    {
+      "id": "whatsapp",
+      "label": "INITIATE_CONTACT // WHATSAPP",
+      "href": "https://wa.me/"
+    },
+    {
+      "id": "linkedin",
+      "label": "VERIFY_PROFILE // LINKEDIN",
+      "href": "https://linkedin.com/in/"
     }
   ]
 }
