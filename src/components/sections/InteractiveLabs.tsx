@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Terminal } from "lucide-react";
+import { Terminal } from "lucide-react";
 import config from "@/data/config.json";
 import type { RootConfig } from "@/types/data";
 
@@ -56,7 +56,7 @@ export default function InteractiveLabs() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
               {/* ────── LEFT PANE: Execution Specs ────── */}
-              <div className="flex flex-col">
+              <div className="flex flex-col justify-center">
                 {/* Category */}
                 <p
                   className="font-mono text-sm tracking-widest uppercase"
@@ -66,12 +66,17 @@ export default function InteractiveLabs() {
                 </p>
 
                 {/* Title */}
-                <h3 className="text-2xl font-bold mt-2 text-foreground">
+                <h3 className="text-3xl font-bold mt-2 mb-4 text-foreground">
                   {lab.title}
                 </h3>
 
+                {/* Description */}
+                <p className="text-muted-foreground mb-6 leading-relaxed">
+                  {lab.description}
+                </p>
+
                 {/* Architecture badges */}
-                <div className="flex flex-wrap gap-2 mt-4">
+                <div className="flex flex-wrap gap-2 mb-8">
                   {lab.architecture.map((tech) => (
                     <Badge
                       key={tech}
@@ -83,40 +88,27 @@ export default function InteractiveLabs() {
                   ))}
                 </div>
 
-                {/* Divider */}
-                <div
-                  className="mt-6 mb-0 h-px"
-                  style={{ backgroundColor: "var(--color-border)" }}
-                />
-
-                {/* Descriptor row */}
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="font-mono text-[10px] text-muted-foreground tracking-widest uppercase">
-                      STATUS
-                    </p>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
-                      </span>
-                      <span className="font-mono text-xs text-green-400">LIVE</span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="font-mono text-[10px] text-muted-foreground tracking-widest uppercase">
-                      ENDPOINT
-                    </p>
-                    <p className="font-mono text-xs text-muted-foreground mt-1 truncate">
-                      {lab.liveUrl.replace("https://", "")}
-                    </p>
-                  </div>
+                {/* Hard Metrics Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 border-t border-b border-border py-6">
+                  {lab.metrics.map((metric, index) => {
+                    const [label, val] = metric.split(": ");
+                    return (
+                      <div key={index} className="flex flex-col">
+                        <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                          {label}
+                        </span>
+                        <span className="text-sm font-mono font-bold text-foreground mt-0.5">
+                          {val ?? metric}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
 
-                {/* CTA button */}
+                {/* Dynamic contextual CTA */}
                 <Button
                   size="lg"
-                  className="mt-8 w-full sm:w-auto gap-2 font-mono text-xs tracking-widest uppercase"
+                  className="w-full sm:w-auto font-mono text-xs tracking-widest uppercase"
                   style={{
                     backgroundColor: "var(--color-primary)",
                     color: "var(--color-primary-foreground)",
@@ -129,8 +121,7 @@ export default function InteractiveLabs() {
                   }
                   onClick={() => window.open(lab.liveUrl, "_blank", "noopener,noreferrer")}
                 >
-                  <ExternalLink className="size-3.5" />
-                  Initialize Secure Connection // Live Demo
+                  {lab.buttonLabel}
                 </Button>
               </div>
 

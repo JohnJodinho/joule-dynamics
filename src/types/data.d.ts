@@ -15,8 +15,11 @@ export interface ServiceMatrix {
 export interface ProjectLab {
   id: string;
   title: string;
-  category: "Agentic RAG" | "Enterprise Scraping";
+  category: "Agentic RAG" | "Enterprise Scraping" | "Model Fine-Tuning";
+  description: string;
+  metrics: string[];
   liveUrl: string;
+  buttonLabel: string;
   architecture: string[];
   terminalPayload: string;
 }

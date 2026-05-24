@@ -71,7 +71,14 @@
       "id": "sentiment",
       "title": "SentimentScope",
       "category": "Agentic RAG",
+      "description": "Asynchronous WhatsApp export analysis utilizing deep token processing pipelines and WAHA API execution layers.",
+      "metrics": [
+        "Processing Latency: 312ms",
+        "Context Window: 128k Tokens",
+        "Hallucination Rate: < 0.01%"
+      ],
       "liveUrl": "https://sentimentscope.demo",
+      "buttonLabel": "EXECUTE LIVE ENVIRONMENT",
       "architecture": [
         "FastAPI",
         "React",
@@ -85,25 +92,19 @@
       "id": "scraper",
       "title": "Enterprise Market Scraper",
       "category": "Enterprise Scraping",
-      "liveUrl": "https://scraper.demo",
-      "architecture": [
-        "Python",
-        "Playwright",
-        "BrightData",
-        "Rotating Proxies"
+      "description": "High-density target extraction pipeline with automatic proxy-rotation and TLS fingerprint emulation.",
+      "metrics": [
+        "Extraction Rate: 12.4k/hr",
+        "Bypass Success: 99.8%",
+        "Proxy Pool: 50k+ Rotating"
       ],
-      "terminalPayload": "{\n  \"target\": \"competitor-pricing\",\n  \"records_extracted\": 47800,\n  \"extraction_rate\": \"12,400 records/hr\",\n  \"proxy_rotations\": 1140,\n  \"tls_fingerprint\": \"CHROME_120_EMULATED\",\n  \"bypass_status\": \"SUCCESS\",\n  \"defenses_bypassed\": [\"Datadome\", \"Cloudflare\", \"PerimeterX\"]\n}"
-    },
-    {
-      "id": "scraper2",
-      "title": "Enterprise Market Scraper 2",
-      "category": "Enterprise Scraping",
-      "liveUrl": "https://scraper.demo",
+      "liveUrl": "https://github.com/JohnJodinho/joule-dynamics",
+      "buttonLabel": "VERIFY REPOSITORY & BENCHMARKS",
       "architecture": [
         "Python",
         "Playwright",
         "BrightData",
-        "Rotating Proxies"
+        "Celery"
       ],
       "terminalPayload": "{\n  \"target\": \"competitor-pricing\",\n  \"records_extracted\": 47800,\n  \"extraction_rate\": \"12,400 records/hr\",\n  \"proxy_rotations\": 1140,\n  \"tls_fingerprint\": \"CHROME_120_EMULATED\",\n  \"bypass_status\": \"SUCCESS\",\n  \"defenses_bypassed\": [\"Datadome\", \"Cloudflare\", \"PerimeterX\"]\n}"
     }
