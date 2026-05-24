@@ -93,18 +93,41 @@
         "Rotating Proxies"
       ],
       "terminalPayload": "{\n  \"target\": \"competitor-pricing\",\n  \"records_extracted\": 47800,\n  \"extraction_rate\": \"12,400 records/hr\",\n  \"proxy_rotations\": 1140,\n  \"tls_fingerprint\": \"CHROME_120_EMULATED\",\n  \"bypass_status\": \"SUCCESS\",\n  \"defenses_bypassed\": [\"Datadome\", \"Cloudflare\", \"PerimeterX\"]\n}"
+    },
+    {
+      "id": "scraper2",
+      "title": "Enterprise Market Scraper 2",
+      "category": "Enterprise Scraping",
+      "liveUrl": "https://scraper.demo",
+      "architecture": [
+        "Python",
+        "Playwright",
+        "BrightData",
+        "Rotating Proxies"
+      ],
+      "terminalPayload": "{\n  \"target\": \"competitor-pricing\",\n  \"records_extracted\": 47800,\n  \"extraction_rate\": \"12,400 records/hr\",\n  \"proxy_rotations\": 1140,\n  \"tls_fingerprint\": \"CHROME_120_EMULATED\",\n  \"bypass_status\": \"SUCCESS\",\n  \"defenses_bypassed\": [\"Datadome\", \"Cloudflare\", \"PerimeterX\"]\n}"
     }
   ],
   "links": [
     {
       "id": "whatsapp",
       "label": "INITIATE_CONTACT // WHATSAPP",
-      "href": "https://wa.me/"
+      "href": "https://wa.me/2348101344101"
     },
     {
       "id": "linkedin",
       "label": "VERIFY_PROFILE // LINKEDIN",
-      "href": "https://linkedin.com/in/"
+      "href": "https://www.linkedin.com/in/john-albarka-ibrahim/"
+    },
+    {
+      "id": "github",
+      "label": "VIEW_SOURCE // GITHUB",
+      "href": "https://github.com/JohnJodinho/joule-dynamics"
+    },
+    {
+      "id": "audit",
+      "label": "START_AUDIT // PORTAL",
+      "href": "/audit"
     }
   ]
 }
