@@ -1,4 +1,164 @@
 {
+  "meta": {
+    "title": "Joule Dynamics | Automation That Pays For Itself",
+    "description": "RAG chatbots, price monitoring, and lead generation systems built for measurable ROI. Get your free automation audit."
+  },
+  "devHub": {
+    "badgeLabel": "🔧 Live Build",
+    "tooltip": "This is our active development hub, hosted on Vercel. Everything here is real, working code — not mockups. We ship fast here first; the branded production domain follows once the first client engagement is underway."
+  },
+  "hero": {
+    "headline": "Automation That Pays For Itself",
+    "subheadline": "RAG systems, pricing intelligence, and lead pipelines — built by an engineer, not a template.",
+    "primaryCtaLabel": "Get My Free Automation Audit",
+    "primaryCtaLink": "#contact"
+  },
+  "solutions": [
+    {
+      "id": "pricing-monitor",
+      "order": 1,
+      "isPublished": true,
+      "category": "Web Scraping & Data Intelligence",
+      "title": "Never Get Undercut on Price Again",
+      "problemStatement": "Retailers lose margin every day competitors quietly drop prices and nobody notices until sales dip.",
+      "solutionDescription": "An always-on monitor that checks competitor pricing and stock levels around the clock and flags changes the moment they happen — no manual spreadsheet-checking required.",
+      "demo": {
+        "kind": "screenshot",
+        "url": "/demos/pricing-monitor-preview.png",
+        "altText": "Pricing monitor dashboard showing real-time competitor price changes",
+        "fallbackNote": "Full demo video coming — ask for a live walkthrough"
+      },
+      "roiMetrics": [
+        {
+          "label": "Margin Recovery",
+          "value": "Up to 14%",
+          "context": "in 12 months",
+          "metricType": "revenue",
+          "isBenchmark": true
+        },
+        {
+          "label": "Annual Upside",
+          "value": "$250K+",
+          "context": "for a mid-size retailer",
+          "metricType": "revenue",
+          "isBenchmark": true
+        }
+      ],
+      "techStackTags": ["Python", "Playwright", "BrightData", "Celery", "Redis", "PostgreSQL"],
+      "ctaLabel": "See how this applies to your catalog →",
+      "ctaLink": "#contact"
+    },
+    {
+      "id": "lead-generator",
+      "order": 2,
+      "isPublished": true,
+      "category": "B2B Lead Generation",
+      "title": "100 Qualified Leads a Week, on Autopilot",
+      "problemStatement": "Sales teams spend hours a week manually hunting for contacts instead of selling.",
+      "solutionDescription": "A pipeline that finds decision-makers matching your ideal customer profile, pulls verified contact details, and hands your team a ready-to-use list — so outreach starts same-day instead of next week.",
+      "demo": {
+        "kind": "screenshot",
+        "url": "/demos/lead-generator-preview.png",
+        "altText": "Lead generation pipeline output showing enriched prospect list",
+        "fallbackNote": "Full demo video coming — ask for a live walkthrough"
+      },
+      "roiMetrics": [
+        {
+          "label": "Close Rate vs. Cold Outreach",
+          "value": "3.4×",
+          "context": "higher",
+          "metricType": "conversion",
+          "isBenchmark": true
+        }
+      ],
+      "techStackTags": ["Python", "FastAPI", "LangChain", "Apollo API", "PostgreSQL", "Docker"],
+      "ctaLabel": "Get a sample lead list for your niche →",
+      "ctaLink": "#contact"
+    },
+    {
+      "id": "support-bot",
+      "order": 3,
+      "isPublished": true,
+      "category": "RAG / Conversational AI",
+      "title": "Answers Your Customers Instantly, From Your Own Docs",
+      "problemStatement": "Support teams re-answer the same FAQs all day, and customers wait hours for simple answers.",
+      "solutionDescription": "A chat assistant trained on your FAQs, policies, or product docs that answers instantly and correctly, on WhatsApp or your website — and escalates to a human only when it actually needs to.",
+      "demo": {
+        "kind": "interactive",
+        "url": "",
+        "altText": "Live smart support chatbot demo widget",
+        "fallbackNote": "Ask a question below to try the live demo"
+      },
+      "roiMetrics": [
+        {
+          "label": "AI Support Market Growth",
+          "value": "4×",
+          "context": "by 2030",
+          "metricType": "market",
+          "isBenchmark": true
+        },
+        {
+          "label": "Repetitive Support Time Freed",
+          "value": "Hours/week",
+          "context": "estimated",
+          "metricType": "time",
+          "isBenchmark": true
+        }
+      ],
+      "techStackTags": ["FastAPI", "LangChain", "Pinecone", "OpenAI", "WAHA API", "React"],
+      "ctaLabel": "Try asking it a question →",
+      "ctaLink": "#labs"
+    }
+  ],
+  "howItWorks": [
+    {
+      "step": 1,
+      "title": "10-Minute Audit",
+      "description": "We identify the highest-leverage automation opportunity in your workflow — no jargon, no obligation."
+    },
+    {
+      "step": 2,
+      "title": "Pilot Build",
+      "description": "A small, fixed-scope pilot proves the value before any large commitment."
+    },
+    {
+      "step": 3,
+      "title": "Scale & Support",
+      "description": "Once proven, we expand coverage and provide ongoing support so the system keeps delivering."
+    }
+  ],
+  "about": {
+    "headline": "Engineering rigor, applied to AI.",
+    "bio": "I'm Jodinho — a First-Class Mechanical Engineering graduate who moved deliberately into AI engineering, now Azure AI-102 certified. I build the kind of systems most agencies talk about but few actually ship: production RAG pipelines, resilient scraping infrastructure, and automation that runs unattended. Joule Dynamics exists to bring that same engineering rigor to problems that are currently costing you time or money.",
+    "credentials": [
+      "First-Class Mechanical Engineering (CGPA 4.63/5.00)",
+      "Azure AI Engineer Associate (AI-102)",
+      "Departmental Best Graduate"
+    ]
+  },
+  "contact": {
+    "headline": "Let's find what's automatable in your business.",
+    "subheadline": "10-minute audit. No sales pitch.",
+    "fields": [
+      { "name": "name", "label": "Name", "type": "text", "required": true },
+      { "name": "email", "label": "Work email", "type": "email", "required": true },
+      {
+        "name": "problem",
+        "label": "What's costing you the most right now?",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Pricing / competitor blindness",
+          "Lead generation",
+          "Slow support / knowledge access",
+          "Something else"
+        ]
+      },
+      { "name": "notes", "label": "Anything else?", "type": "textarea", "required": false }
+    ],
+    "submitLabel": "Get My Free Automation Audit",
+    "trustLine": "No sales pitch — just a 10-minute look at what's automatable in your workflow."
+  },
   "telemetry": {
     "uptime": "99.98%",
     "latencyMs": 42,
@@ -9,36 +169,21 @@
       "id": "rag",
       "title": "Agentic RAG",
       "description": "Reasoning-heavy architectures for zero-hallucination compliance engines.",
-      "stack": [
-        "Python",
-        "FastAPI",
-        "VectorDB",
-        "LangChain"
-      ],
+      "stack": ["Python", "FastAPI", "VectorDB", "LangChain"],
       "roiVector": "Reduces manual lookup latency by 94%"
     },
     {
       "id": "scraping",
       "title": "Resilient Scraping Pipelines",
       "description": "Enterprise data pipelines handling high-density target extraction with automatic proxy-rotation, TLS fingerprint emulation, and explicit bypass of Datadome, Cloudflare, and PerimeterX enterprise-grade bot defenses.",
-      "stack": [
-        "TypeScript",
-        "Playwright",
-        "BrightData",
-        "Celery"
-      ],
+      "stack": ["TypeScript", "Playwright", "BrightData", "Celery"],
       "roiVector": "Extracts 10k–50k records/hr · 99.8% bypass rate on enterprise scraper defenses"
     },
     {
       "id": "infra",
       "title": "AI Infrastructure",
       "description": "Autonomous agent workflows injected directly into existing enterprise stacks.",
-      "stack": [
-        "Docker",
-        "Kubernetes",
-        "Redis",
-        "Azure AI"
-      ],
+      "stack": ["Docker", "Kubernetes", "Redis", "Azure AI"],
       "roiVector": "Scales to 10k concurrent reasoning operations"
     }
   ],
@@ -79,13 +224,7 @@
       ],
       "liveUrl": "https://sentimentscope.demo",
       "buttonLabel": "EXECUTE LIVE ENVIRONMENT",
-      "architecture": [
-        "FastAPI",
-        "React",
-        "Pinecone",
-        "OpenAI",
-        "WAHA API"
-      ],
+      "architecture": ["FastAPI", "React", "Pinecone", "OpenAI", "WAHA API"],
       "terminalPayload": "{\n  \"status\": 200,\n  \"engine\": \"async-rag-v2\",\n  \"source\": \"whatsapp_export\",\n  \"tokens_processed\": 184320,\n  \"chunks_indexed\": 2048,\n  \"insight\": \"High churn probability detected across 3 sentiment clusters.\",\n  \"confidence\": 0.97,\n  \"latency_ms\": 312,\n  \"waha_api\": \"CONNECTED\"\n}"
     },
     {
@@ -100,12 +239,7 @@
       ],
       "liveUrl": "https://github.com/JohnJodinho/joule-dynamics",
       "buttonLabel": "VERIFY REPOSITORY & BENCHMARKS",
-      "architecture": [
-        "Python",
-        "Playwright",
-        "BrightData",
-        "Celery"
-      ],
+      "architecture": ["Python", "Playwright", "BrightData", "Celery"],
       "terminalPayload": "{\n  \"target\": \"competitor-pricing\",\n  \"records_extracted\": 47800,\n  \"extraction_rate\": \"12,400 records/hr\",\n  \"proxy_rotations\": 1140,\n  \"tls_fingerprint\": \"CHROME_120_EMULATED\",\n  \"bypass_status\": \"SUCCESS\",\n  \"defenses_bypassed\": [\"Datadome\", \"Cloudflare\", \"PerimeterX\"]\n}"
     }
   ],
@@ -124,11 +258,6 @@
       "id": "github",
       "label": "VIEW_SOURCE // GITHUB",
       "href": "https://github.com/JohnJodinho/joule-dynamics"
-    },
-    {
-      "id": "audit",
-      "label": "START_AUDIT // PORTAL",
-      "href": "/audit"
     }
   ]
 }

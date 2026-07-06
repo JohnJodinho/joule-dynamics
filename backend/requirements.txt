@@ -1,0 +1,12 @@
+# Joule Dynamics AI Engine — Backend Dependencies
+# Phase 2: FastAPI + Pydantic validation layer
+# Phase 3 additions: celery, redis (commented for reference)
+
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.7.0
+email-validator>=2.0.0
+
+# Phase 3 — uncomment when the Celery worker layer is wired:
+# celery>=5.4.0
+# redis>=5.0.0

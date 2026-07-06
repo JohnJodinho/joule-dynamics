@@ -1,5 +1,14 @@
+/**
+ * HeroEngine.tsx
+ * Revamp: copy now pulled entirely from config.json's hero key.
+ * Structural grid preserved; headline/subheadline/CTA updated for buyer framing.
+ */
 import { Button } from "@/components/ui/button";
-import { ArrowRight, FlaskConical } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import config from "@/data/config.json";
+import type { RootConfig } from "@/types/data";
+
+const { hero } = config as unknown as RootConfig;
 
 export default function HeroEngine() {
   return (
@@ -30,17 +39,14 @@ export default function HeroEngine() {
         <div className="mb-8">
           <code className="inline-flex flex-wrap items-center gap-2 rounded-sm border border-border bg-secondary px-3 py-1.5 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
             <span className="text-primary">▸</span>
-            <span>CREDENTIAL</span>
-            <span className="opacity-40">//</span>
             <span>B.ENG. MECHANICAL ENGINEERING (FIRST CLASS)</span>
             <span className="opacity-40">//</span>
             <span className="text-accent">AZURE AI-102 CERTIFIED</span>
           </code>
         </div>
 
-        {/* ── Main headline ── */}
+        {/* ── Main headline — from config.hero ── */}
         <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.05] text-foreground max-w-4xl">
-          Engineering{" "}
           <span
             className="text-transparent bg-clip-text"
             style={{
@@ -48,17 +54,13 @@ export default function HeroEngine() {
                 "linear-gradient(135deg, var(--color-primary) 0%, hsl(199 89% 68%) 100%)",
             }}
           >
-            Autonomous Reasoning Systems
-          </span>{" "}
-          for High-Stakes Enterprises.
+            {hero.headline}
+          </span>
         </h1>
 
-        {/* ── Value proposition ── */}
+        {/* ── Subheadline — from config.hero ── */}
         <p className="mt-6 max-w-2xl text-base md:text-lg leading-relaxed text-muted-foreground">
-          I replace manual corporate operational friction with deterministic AI
-          agents, resilient scraping pipelines, and zero-hallucination RAG
-          layers. Every system ships with measurable ROI benchmarks — no
-          vaporware, no approximations.
+          {hero.subheadline}
         </p>
 
         {/* ── CTA row ── */}
@@ -76,21 +78,23 @@ export default function HeroEngine() {
             onMouseLeave={(e) =>
               (e.currentTarget.style.backgroundColor = "var(--color-primary)")
             }
+            asChild
           >
-            Deploy Agentic RAG
-            <ArrowRight className="size-4" />
+            <a href={hero.primaryCtaLink} id="hero-primary-cta">
+              {hero.primaryCtaLabel}
+              <ArrowRight className="size-4" />
+            </a>
           </Button>
 
           <Button
             variant="outline"
             size="lg"
             className="w-full sm:w-auto gap-2 border-border text-foreground hover:border-primary hover:text-primary transition-colors"
+            asChild
           >
-            <FlaskConical className="size-4 opacity-70" />
-            View Labs{" "}
-            <span className="font-mono text-xs text-muted-foreground">
-              [SentimentScope]
-            </span>
+            <a href="#solutions" id="hero-secondary-cta">
+              See the solutions
+            </a>
           </Button>
         </div>
 
