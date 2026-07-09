@@ -7,6 +7,7 @@
 import config from "@/data/config.json";
 import type { RootConfig } from "@/types/data";
 import SolutionCard from "./SolutionCard";
+import ChatDemo from "./ChatDemo";
 
 const { solutions } = config as unknown as RootConfig;
 
@@ -20,7 +21,13 @@ export default function SolutionsGrid() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       {visible.map((solution) => (
-        <SolutionCard key={solution.id} solution={solution} />
+        <SolutionCard
+          key={solution.id}
+          solution={solution}
+          interactiveSlot={
+            solution.id === "support-bot" ? <ChatDemo /> : undefined
+          }
+        />
       ))}
     </div>
   );
