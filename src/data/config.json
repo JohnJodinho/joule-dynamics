@@ -23,10 +23,10 @@
       "problemStatement": "Retailers lose margin every day competitors quietly drop prices and nobody notices until sales dip.",
       "solutionDescription": "An always-on monitor that checks competitor pricing and stock levels around the clock and flags changes the moment they happen — no manual spreadsheet-checking required.",
       "demo": {
-        "kind": "screenshot",
-        "url": "/demos/pricing-monitor-preview.png",
+        "kind": "interactive",
+        "url": "",
         "altText": "Pricing monitor dashboard showing real-time competitor price changes",
-        "fallbackNote": "Full demo video coming — ask for a live walkthrough"
+        "fallbackNote": "Loading live monitoring dashboard..."
       },
       "roiMetrics": [
         {
@@ -57,10 +57,10 @@
       "problemStatement": "Sales teams spend hours a week manually hunting for contacts instead of selling.",
       "solutionDescription": "A pipeline that finds decision-makers matching your ideal customer profile, pulls verified contact details, and hands your team a ready-to-use list — so outreach starts same-day instead of next week.",
       "demo": {
-        "kind": "screenshot",
-        "url": "/demos/lead-generator-preview.png",
+        "kind": "interactive",
+        "url": "",
         "altText": "Lead generation pipeline output showing enriched prospect list",
-        "fallbackNote": "Full demo video coming — ask for a live walkthrough"
+        "fallbackNote": "Loading live prospector pipeline..."
       },
       "roiMetrics": [
         {

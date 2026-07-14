@@ -24,3 +24,11 @@ venv
 *.sln
 *.sw?
 .env*
+
+__pycache__
+.venv
+*.pyc
+
+joule-dynamics-revamp-blueprint.md
+HANDOVER.md
+get_project_tree.py
