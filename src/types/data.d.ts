@@ -2,12 +2,6 @@
 // Existing portfolio interfaces (unchanged)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface SystemTelemetry {
-  uptime: string;
-  latencyMs: number;
-  status: "ACTIVE" | "MAINTENANCE";
-}
-
 export interface ServiceMatrix {
   id: string;
   title: string;
@@ -98,7 +92,6 @@ export interface FormField {
 
 export interface RootConfig {
   // Existing keys
-  telemetry: SystemTelemetry;
   services: ServiceMatrix[];
   deployments: OperationalDeployment[];
   labs: ProjectLab[];
@@ -119,6 +112,10 @@ export interface RootConfig {
     primaryCtaLabel: string;
     primaryCtaLink: string;
   };
+  sections: Array<{
+    id: string;
+    label: string;
+  }>;
   solutions: Solution[];
   howItWorks: Array<{
     step: number;
@@ -137,5 +134,20 @@ export interface RootConfig {
     fields: FormField[];
     submitLabel: string;
     trustLine: string;
+    privacyLine?: string;
+  };
+  socialProof: {
+    founderNote: {
+      quote: string;
+      author: string;
+      role: string;
+    };
+    maxTestimonialsToShow: number;
+    testimonials: Array<{
+      quote: string;
+      author: string;
+      role: string;
+      company?: string;
+    }>;
   };
 }

@@ -34,7 +34,7 @@ export default function CredentialFooter() {
     <footer className="border-t border-border bg-card mt-16">
 
       {/* ── About section ── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-b border-border">
+      <div id="about" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-b border-border">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           <div>
             <h2 className="text-xl font-bold text-foreground mb-3">{about.headline}</h2>
@@ -51,7 +51,7 @@ export default function CredentialFooter() {
               <Badge
                 key={cred}
                 variant="outline"
-                className="rounded-sm font-mono text-[10px] tracking-wide px-2.5 py-1 border-border text-muted-foreground w-fit"
+                className="rounded-sm font-mono text-[10px] tracking-wide px-2.5 py-1.5 border-border text-muted-foreground w-fit whitespace-normal text-left h-auto leading-snug"
               >
                 {cred}
               </Badge>
@@ -81,15 +81,15 @@ export default function CredentialFooter() {
             </p>
             <Badge
               variant="default"
-              className="rounded-sm font-mono text-[10px] tracking-wider px-2.5 py-1 bg-primary text-primary-foreground w-fit"
+              className="rounded-sm font-mono text-[10px] tracking-wider px-2.5 py-1.5 bg-primary text-primary-foreground w-fit whitespace-normal text-left h-auto leading-snug"
             >
               [VERIFIED] B.Eng. Mechanical Engineering (First Class)
             </Badge>
             <Badge
               variant="outline"
-              className="rounded-sm font-mono text-[10px] tracking-wider px-2.5 py-1 border-border text-muted-foreground w-fit"
+              className="rounded-sm font-mono text-[10px] tracking-wider px-2.5 py-1.5 border-border text-muted-foreground w-fit whitespace-normal text-left h-auto leading-snug"
             >
-              [CERTIFIED] Microsoft Azure AI-102
+              Microsoft Azure AI Engineer Associate (2024)
             </Badge>
           </div>
 

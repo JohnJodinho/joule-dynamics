@@ -4,24 +4,76 @@
  * alongside the existing telemetry readouts. The badge turns the Vercel subdomain
  * from a potential credibility gap into a transparency signal.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import config from "@/data/config.json";
 import type { RootConfig } from "@/types/data";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { Menu, X } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
-const { telemetry, devHub } = config as unknown as RootConfig;
+interface TelemetryData {
+  uptime_pct: number;
+  latency_ms: number;
+  status: string;
+}
+
+const { devHub } = config as unknown as RootConfig;
 
 export function SystemStatusBar() {
   const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [telemetry, setTelemetry] = useState<TelemetryData | null>(null);
+
+  useEffect(() => {
+    async function fetchTelemetry() {
+      try {
+        const { data, error } = await supabase
+          .from("v_latest_telemetry")
+          .select("*")
+          .limit(1)
+          .maybeSingle();
+        
+        if (data && !error) {
+          setTelemetry(data as TelemetryData);
+        }
+      } catch (err) {
+        // Silently ignore, just means we won't render telemetry
+      }
+    }
+    fetchTelemetry();
+  }, []);
+
+  const navLinks = [
+    { label: "// SOLUTIONS", href: "/#solutions" },
+    { label: "// HOW IT WORKS", href: "/#how-it-works" },
+    { label: "// LIVE SYSTEMS", href: "/live-systems" },
+    { label: "// ABOUT", href: "/#about" },
+    { label: "// GET AUDIT", href: "/#contact" },
+  ];
 
   return (
     <nav className="fixed top-0 w-full z-50 border-b border-border bg-background/80 backdrop-blur">
-      <div className="container mx-auto px-4 h-10 flex items-center justify-between gap-4">
+      <div className="container mx-auto px-4 h-12 flex items-center justify-between gap-4">
 
-        {/* Left: Brand slug */}
-        <span className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase shrink-0">
-          JOULE//DYNAMICS
-        </span>
+        {/* Left: Brand slug & Desktop Nav */}
+        <div className="flex items-center gap-6">
+          <span className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase shrink-0">
+            <a href="/" className="hover:text-foreground transition-colors">JOULE//DYNAMICS</a>
+          </span>
+
+          {/* Desktop Nav */}
+          <div className="hidden lg:flex items-center gap-5">
+            {navLinks.map((link) => (
+              <a 
+                key={link.label}
+                href={link.href} 
+                className="font-mono text-[10px] tracking-widest text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+        </div>
 
         {/* Center / Right: Dev Hub badge + telemetry + theme toggle */}
         <div className="flex items-center gap-3 ml-auto">
@@ -60,32 +112,61 @@ export function SystemStatusBar() {
           </div>
 
           {/* ── Telemetry readouts (hidden on very small screens) ── */}
-          <div className="hidden md:flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <span className="font-mono text-[10px] text-muted-foreground">UPTIME</span>
-              <span className="font-mono text-[10px] text-primary font-bold">{telemetry.uptime}</span>
-            </div>
+          {telemetry && (
+            <div className="hidden md:flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-[10px] text-muted-foreground">UPTIME</span>
+                <span className="font-mono text-[10px] text-primary font-bold">{telemetry.uptime_pct}%</span>
+              </div>
 
-            <div className="flex items-center gap-1.5">
-              <span className="font-mono text-[10px] text-muted-foreground">LATENCY</span>
-              <span className="font-mono text-[10px] text-primary font-bold">{telemetry.latencyMs}ms</span>
-            </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-[10px] text-muted-foreground">LATENCY</span>
+                <span className="font-mono text-[10px] text-primary font-bold">{telemetry.latency_ms}ms</span>
+              </div>
 
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
-              </span>
-              <span className="font-mono text-[10px] font-bold text-green-400 tracking-widest">
-                {telemetry.status}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${telemetry.status === 'ACTIVE' ? 'bg-green-500' : 'bg-amber-500'}`} />
+                  <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${telemetry.status === 'ACTIVE' ? 'bg-green-500' : 'bg-amber-500'}`} />
+                </span>
+                <span className={`font-mono text-[10px] font-bold tracking-widest ${telemetry.status === 'ACTIVE' ? 'text-green-400' : 'text-amber-400'}`}>
+                  {telemetry.status}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Theme toggle — always visible */}
           <ThemeToggle />
+
+          {/* Mobile menu toggle */}
+          <button 
+            className="lg:hidden text-muted-foreground hover:text-foreground p-1"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle navigation menu"
+          >
+            {mobileMenuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Nav Dropdown */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden border-t border-border bg-background px-4 py-3 shadow-lg">
+          <div className="flex flex-col gap-3">
+            {navLinks.map((link) => (
+              <a 
+                key={link.label}
+                href={link.href} 
+                onClick={() => setMobileMenuOpen(false)}
+                className="font-mono text-[10px] tracking-widest text-muted-foreground hover:text-primary transition-colors py-1"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

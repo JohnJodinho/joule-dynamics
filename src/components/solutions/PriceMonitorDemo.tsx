@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Bell, ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { Bell, ArrowDownRight, ArrowUpRight, ArrowRight } from "lucide-react";
 
 interface PriceRow {
   id: string;
@@ -120,7 +120,7 @@ export default function PriceMonitorDemo() {
 
   if (loading || loadingAlerts) {
     return (
-      <div className="flex h-full w-full flex-col gap-6 bg-card p-4 text-sm animate-pulse">
+      <div className="flex w-full flex-col gap-6 bg-card p-6 text-sm animate-pulse min-h-[400px]">
         <div className="flex flex-col gap-3">
           <div className="flex justify-between">
              <div className="h-5 w-32 rounded bg-muted/60"></div>
@@ -143,7 +143,7 @@ export default function PriceMonitorDemo() {
   };
   
   const formatPct = (pct: number | null) => {
-    if (pct === null) return "0.0%";
+    if (pct === null) return "First reading";
     const sign = pct > 0 ? "+" : "";
     return `${sign}${pct.toFixed(1)}%`;
   };
@@ -168,7 +168,7 @@ export default function PriceMonitorDemo() {
     .reverse(); // Reverse so older dates are first on x-axis
 
   return (
-    <div className="flex h-full w-full flex-col gap-8 bg-card p-4 text-sm">
+    <div className="flex w-full flex-col gap-8 bg-card p-6 text-sm">
       
       {/* Alerts Panel */}
       {alerts.length > 0 && (
@@ -188,13 +188,15 @@ export default function PriceMonitorDemo() {
                   <span className="text-xs text-muted-foreground">
                     {alert.alert_type === 'target_reached' 
                       ? `Hit target of $${alert.target_price?.toFixed(2)}` 
-                      : `Changed from $${alert.previous_price?.toFixed(2)}`}
+                      : alert.previous_price === null 
+                        ? `Initial price logged` 
+                        : `Changed from $${alert.previous_price.toFixed(2)}`}
                   </span>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   <div className={`flex items-center gap-1 font-bold ${getPctChangeColor(alert.pct_change)}`}>
-                    {alert.pct_change && alert.pct_change < 0 ? <ArrowDownRight className="size-3" /> : <ArrowUpRight className="size-3" />}
-                    ${alert.price_at_alert.toFixed(2)} ({formatPct(alert.pct_change)})
+                    {alert.pct_change && alert.pct_change < 0 ? <ArrowDownRight className="size-3" /> : alert.pct_change && alert.pct_change > 0 ? <ArrowUpRight className="size-3" /> : null}
+                    ${alert.price_at_alert.toFixed(2)} {alert.pct_change !== null && `(${formatPct(alert.pct_change)})`}
                   </div>
                   <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
                     {new Date(alert.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
@@ -224,7 +226,7 @@ export default function PriceMonitorDemo() {
         </div>
         
         {chartData.length > 0 ? (
-          <div className="h-48 w-full border border-border/50 rounded-lg bg-card/50 p-2">
+          <div className="h-64 w-full border border-border/50 rounded-lg bg-card/50 p-4">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} opacity={0.5} />
@@ -264,7 +266,7 @@ export default function PriceMonitorDemo() {
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="h-48 w-full border border-border/50 rounded-lg bg-card/50 p-2 flex items-center justify-center">
+          <div className="h-64 w-full border border-border/50 rounded-lg bg-card/50 p-4 flex items-center justify-center">
             <p className="text-xs text-muted-foreground">No chart data</p>
           </div>
         )}
@@ -272,10 +274,17 @@ export default function PriceMonitorDemo() {
 
       {/* Table Section */}
       <div className="flex flex-col gap-3">
-        <h4 className="font-semibold text-foreground">Latest Competitor Pricing</h4>
+        <div className="flex items-center justify-between">
+          <h4 className="font-semibold text-foreground">Latest Competitor Pricing</h4>
+          {latestPrices.length > 0 && (
+            <span className="text-[10px] text-muted-foreground sm:hidden flex items-center gap-1">Swipe <ArrowRight className="size-3"/></span>
+          )}
+        </div>
         {latestPrices.length > 0 ? (
-          <div className="w-full overflow-x-auto rounded-md border border-border shadow-sm">
-            <table className="w-full text-left text-xs whitespace-nowrap">
+          <div className="relative w-full rounded-md border border-border shadow-sm overflow-hidden">
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent pointer-events-none sm:hidden z-10"></div>
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-left text-xs whitespace-nowrap">
               <thead className="border-b border-border bg-muted/30 text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">Product</th>
@@ -314,7 +323,8 @@ export default function PriceMonitorDemo() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         ) : (
           <div className="flex h-32 w-full flex-col items-center justify-center rounded-md border border-border bg-card/50 text-center">

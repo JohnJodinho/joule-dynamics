@@ -7,20 +7,18 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import DemoEmbed from "./DemoEmbed";
 import ROIMetricsRow from "./ROIMetricsRow";
-import TechStackPanel from "./TechStackPanel";
 import type { Solution } from "@/types/data";
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface SolutionCardProps {
   solution: Solution;
-  /** Optional interactive widget to slot into DemoEmbed when kind="interactive" */
-  interactiveSlot?: React.ReactNode;
 }
 
-export default function SolutionCard({ solution, interactiveSlot }: SolutionCardProps) {
+export default function SolutionCard({ solution }: SolutionCardProps) {
   const isExternalLink = solution.ctaLink.startsWith("http");
+  const isInternalRoute = solution.ctaLink.startsWith("/");
 
   return (
     <Card
@@ -51,17 +49,8 @@ export default function SolutionCard({ solution, interactiveSlot }: SolutionCard
           {solution.solutionDescription}
         </p>
 
-        {/* ── Demo embed ── */}
-        <DemoEmbed demo={solution.demo} interactiveSlot={interactiveSlot} />
-
-        {/* ── ROI metrics row ── */}
-        <ROIMetricsRow metrics={solution.roiMetrics} />
-
-        {/* ── Under the hood ── */}
-        <TechStackPanel tags={solution.techStackTags} />
-
-        {/* ── CTA button — pushed to bottom ── */}
-        <div className="mt-auto pt-2">
+        {/* ── Demo embed / Single CTA (A10 Update) ── */}
+        <div className="py-2">
           <Button
             asChild
             size="sm"
@@ -71,18 +60,29 @@ export default function SolutionCard({ solution, interactiveSlot }: SolutionCard
               color: "var(--color-primary-foreground)",
             }}
           >
-            <a
-              href={solution.ctaLink}
-              {...(isExternalLink
-                ? { target: "_blank", rel: "noopener noreferrer" }
-                : {})}
-              id={`cta-${solution.id}`}
-            >
-              {solution.ctaLabel}
-              <ArrowRight className="size-3.5" />
-            </a>
+            {isInternalRoute ? (
+              <Link to={solution.ctaLink} id={`cta-${solution.id}`}>
+                {solution.ctaLabel}
+                <ArrowRight className="size-3.5" />
+              </Link>
+            ) : (
+              <a
+                href={solution.ctaLink}
+                {...(isExternalLink
+                  ? { target: "_blank", rel: "noopener noreferrer" }
+                  : {})}
+                id={`cta-${solution.id}`}
+              >
+                {solution.ctaLabel}
+                <ArrowRight className="size-3.5" />
+              </a>
+            )}
           </Button>
         </div>
+
+        {/* ── ROI metrics row (Limited to 1 metric) ── */}
+        <ROIMetricsRow metrics={solution.roiMetrics.slice(0, 1)} />
+
       </CardContent>
     </Card>
   );

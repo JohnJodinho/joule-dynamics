@@ -5,6 +5,7 @@
  */
 import config from "@/data/config.json";
 import type { RootConfig } from "@/types/data";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 
 const { howItWorks } = config as unknown as RootConfig;
 
@@ -13,9 +14,7 @@ export default function OperationalHistory() {
     <section id="how-it-works" className="py-16 border-b border-border">
       {/* ── Section identifier ── */}
       <div className="flex items-center gap-3 mb-10">
-        <h2 className="font-mono text-xs text-primary tracking-widest whitespace-nowrap">
-          // 02. HOW THIS WORKS
-        </h2>
+        <SectionHeader sectionId="how-it-works" />
         <span
           aria-hidden="true"
           className="flex-1 h-px"

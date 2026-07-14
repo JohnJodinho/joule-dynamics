@@ -7,10 +7,6 @@
 import config from "@/data/config.json";
 import type { RootConfig } from "@/types/data";
 import SolutionCard from "./SolutionCard";
-import ChatDemo from "./ChatDemo";
-import PriceMonitorDemo from "./PriceMonitorDemo";
-import LeadGeneratorDemo from "./LeadGeneratorDemo";
-import ScrapeHealthStrip from "./ScrapeHealthStrip";
 
 const { solutions } = config as unknown as RootConfig;
 
@@ -23,17 +19,11 @@ export default function SolutionsGrid() {
 
   return (
     <div className="flex flex-col w-full">
-      <ScrapeHealthStrip />
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {visible.map((solution) => (
           <SolutionCard
             key={solution.id}
             solution={solution}
-            interactiveSlot={
-              solution.id === "support-bot" ? <ChatDemo /> :
-              solution.id === "pricing-monitor" ? <PriceMonitorDemo /> :
-              solution.id === "lead-generator" ? <LeadGeneratorDemo /> : undefined
-            }
           />
         ))}
       </div>

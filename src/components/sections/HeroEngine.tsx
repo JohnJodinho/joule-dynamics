@@ -35,16 +35,6 @@ export default function HeroEngine() {
       />
 
       <div className="relative z-10 py-20 md:py-32 px-4 sm:px-6 lg:px-0">
-        {/* ── Credential micro-badge ── */}
-        <div className="mb-8">
-          <code className="inline-flex flex-wrap items-center gap-2 rounded-sm border border-border bg-secondary px-3 py-1.5 font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-            <span className="text-primary">▸</span>
-            <span>B.ENG. MECHANICAL ENGINEERING (FIRST CLASS)</span>
-            <span className="opacity-40">//</span>
-            <span className="text-accent">AZURE AI-102 CERTIFIED</span>
-          </code>
-        </div>
-
         {/* ── Main headline — from config.hero ── */}
         <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.05] text-foreground max-w-4xl">
           <span
@@ -96,23 +86,6 @@ export default function HeroEngine() {
               See the solutions
             </a>
           </Button>
-        </div>
-
-        {/* ── Bottom telemetry strip ── */}
-        <div className="mt-16 pt-6 border-t border-border flex flex-wrap gap-x-8 gap-y-2">
-          {[
-            { label: "STACK", value: "React 19 · FastAPI · LangChain · Playwright" },
-            { label: "INFRA", value: "Docker · K8s · Azure AI · Pinecone" },
-            { label: "SLA", value: "99.98% UPTIME · 42ms P95 LATENCY" },
-          ].map(({ label, value }) => (
-            <div key={label} className="flex items-center gap-2">
-              <span className="font-mono text-[10px] tracking-widest text-muted-foreground">
-                {label}
-              </span>
-              <span className="text-[10px] opacity-30 text-muted-foreground">/</span>
-              <span className="font-mono text-[10px] text-foreground">{value}</span>
-            </div>
-          ))}
         </div>
       </div>
     </section>

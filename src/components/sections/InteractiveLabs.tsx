@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Terminal } from "lucide-react";
 import config from "@/data/config.json";
 import type { RootConfig } from "@/types/data";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 
 const { labs } = config as RootConfig;
 
@@ -17,9 +18,7 @@ export default function InteractiveLabs() {
     <section className="py-16 border-b border-border">
       {/* ── Section identifier ── */}
       <div className="flex items-center gap-3 mb-6">
-        <span className="font-mono text-xs text-primary tracking-widest">
-          // 02. INTERACTIVE LABS &amp; TELEMETRY
-        </span>
+        <SectionHeader sectionId="labs" />
         <span
           aria-hidden="true"
           className="flex-1 h-px"

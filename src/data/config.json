@@ -45,8 +45,8 @@
         }
       ],
       "techStackTags": ["Python", "Playwright", "BrightData", "Celery", "Redis", "PostgreSQL"],
-      "ctaLabel": "See how this applies to your catalog →",
-      "ctaLink": "#contact"
+      "ctaLabel": "See it tracking real prices →",
+      "ctaLink": "/live-systems#pricing"
     },
     {
       "id": "lead-generator",
@@ -72,8 +72,8 @@
         }
       ],
       "techStackTags": ["Python", "FastAPI", "LangChain", "Apollo API", "PostgreSQL", "Docker"],
-      "ctaLabel": "Get a sample lead list for your niche →",
-      "ctaLink": "#contact"
+      "ctaLabel": "See real leads coming in →",
+      "ctaLink": "/live-systems#leads"
     },
     {
       "id": "support-bot",
@@ -106,8 +106,8 @@
         }
       ],
       "techStackTags": ["FastAPI", "LangChain", "Pinecone", "OpenAI", "WAHA API", "React"],
-      "ctaLabel": "Try asking it a question →",
-      "ctaLink": "#labs"
+      "ctaLabel": "Try the live assistant →",
+      "ctaLink": "/live-systems#assistant"
     }
   ],
   "howItWorks": [
@@ -119,7 +119,7 @@
     {
       "step": 2,
       "title": "Pilot Build",
-      "description": "A small, fixed-scope pilot proves the value before any large commitment."
+      "description": "A small, fixed-scope pilot proves the value before any large commitment. Pilots are fixed-scope and fixed-price; ongoing support is a monthly retainer."
     },
     {
       "step": 3,
@@ -127,12 +127,21 @@
       "description": "Once proven, we expand coverage and provide ongoing support so the system keeps delivering."
     }
   ],
+  "socialProof": {
+    "founderNote": {
+      "quote": "I built and ran these pipelines against real e-commerce and B2B targets to prove them end-to-end before offering them as a service — what you see below are the actual systems running live.",
+      "author": "John Albarka Ibrahim",
+      "role": "Founder"
+    },
+    "maxTestimonialsToShow": 3,
+    "testimonials": []
+  },
   "about": {
     "headline": "Engineering rigor, applied to AI.",
-    "bio": "I'm Jodinho — a First-Class Mechanical Engineering graduate who moved deliberately into AI engineering, now Azure AI-102 certified. I build the kind of systems most agencies talk about but few actually ship: production RAG pipelines, resilient scraping infrastructure, and automation that runs unattended. Joule Dynamics exists to bring that same engineering rigor to problems that are currently costing you time or money.",
+    "bio": "I'm Jodinho — a First-Class Mechanical Engineering graduate who moved deliberately into AI engineering, now an Azure AI Engineer Associate (2024). I build the kind of systems most agencies talk about but few actually ship: production RAG pipelines, resilient scraping infrastructure, and automation that runs unattended. Joule Dynamics exists to bring that same engineering rigor to problems that are currently costing you time or money.",
     "credentials": [
       "First-Class Mechanical Engineering (CGPA 4.63/5.00)",
-      "Azure AI Engineer Associate (AI-102)",
+      "Azure AI Engineer Associate (AI-102), 2024",
       "Departmental Best Graduate"
     ]
   },
@@ -157,13 +166,14 @@
       { "name": "notes", "label": "Anything else?", "type": "textarea", "required": false }
     ],
     "submitLabel": "Get My Free Automation Audit",
-    "trustLine": "No sales pitch — just a 10-minute look at what's automatable in your workflow."
+    "trustLine": "No sales pitch — just a 10-minute look at what's automatable in your workflow.",
+    "privacyLine": "Your information is used only to prepare your audit and is never shared."
   },
-  "telemetry": {
-    "uptime": "99.98%",
-    "latencyMs": 42,
-    "status": "ACTIVE"
-  },
+  "sections": [
+    { "id": "solutions", "label": "SOLUTIONS" },
+    { "id": "how-it-works", "label": "HOW THIS WORKS" },
+    { "id": "contact", "label": "GET YOUR FREE AUDIT" }
+  ],
   "services": [
     {
       "id": "rag",
@@ -213,10 +223,10 @@
   ],
   "labs": [
     {
-      "id": "sentiment",
-      "title": "SentimentScope",
+      "id": "agentic-rag",
+      "title": "Smart Support Assistant",
       "category": "Agentic RAG",
-      "description": "Asynchronous WhatsApp export analysis utilizing deep token processing pipelines and WAHA API execution layers.",
+      "description": "A customer support RAG engine that grounds answers strictly in provided documentation.",
       "metrics": [
         "Processing Latency: 312ms",
         "Context Window: 128k Tokens",
@@ -225,7 +235,7 @@
       "liveUrl": "https://sentimentscope.demo",
       "buttonLabel": "EXECUTE LIVE ENVIRONMENT",
       "architecture": ["FastAPI", "React", "Pinecone", "OpenAI", "WAHA API"],
-      "terminalPayload": "{\n  \"status\": 200,\n  \"engine\": \"async-rag-v2\",\n  \"source\": \"whatsapp_export\",\n  \"tokens_processed\": 184320,\n  \"chunks_indexed\": 2048,\n  \"insight\": \"High churn probability detected across 3 sentiment clusters.\",\n  \"confidence\": 0.97,\n  \"latency_ms\": 312,\n  \"waha_api\": \"CONNECTED\"\n}"
+      "terminalPayload": "{\n  \"status\": 200,\n  \"engine\": \"agentic-rag-v2\",\n  \"query\": \"What is the return policy?\",\n  \"retrieved_chunks\": 3,\n  \"answer\": \"Items can be returned within 30 days of delivery in their original packaging.\",\n  \"confidence\": 0.94,\n  \"latency_ms\": 312,\n  \"sources\": [\"returns_policy.pdf\", \"faq_v3.md\"]\n}"
     },
     {
       "id": "scraper",
@@ -244,6 +254,31 @@
     }
   ],
   "links": [
+    {
+      "id": "solutions",
+      "label": "NAV // SOLUTIONS",
+      "href": "/#solutions"
+    },
+    {
+      "id": "how-it-works",
+      "label": "NAV // HOW IT WORKS",
+      "href": "/#how-it-works"
+    },
+    {
+      "id": "live-systems",
+      "label": "NAV // LIVE SYSTEMS",
+      "href": "/live-systems"
+    },
+    {
+      "id": "about",
+      "label": "NAV // ABOUT",
+      "href": "/#about"
+    },
+    {
+      "id": "contact",
+      "label": "NAV // GET AUDIT",
+      "href": "/#contact"
+    },
     {
       "id": "whatsapp",
       "label": "INITIATE_CONTACT // WHATSAPP",

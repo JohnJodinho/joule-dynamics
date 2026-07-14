@@ -38,6 +38,7 @@ import {
 import config from "@/data/config.json";
 import type { RootConfig } from "@/types/data";
 import { CheckCircle } from "lucide-react";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 
 const { contact } = config as unknown as RootConfig;
 
@@ -108,9 +109,7 @@ export default function AuditPortal() {
     <section id="contact" className="py-16 border-b border-border">
       {/* ── Section identifier ── */}
       <div className="flex items-center gap-3 mb-10">
-        <span className="font-mono text-xs text-primary tracking-widest whitespace-nowrap">
-          // 04. GET YOUR FREE AUDIT
-        </span>
+        <SectionHeader sectionId="contact" />
         <span
           aria-hidden="true"
           className="flex-1 h-px"
@@ -294,9 +293,16 @@ export default function AuditPortal() {
                         : contact.submitLabel}
                     </Button>
 
-                    <p className="text-center text-xs text-muted-foreground leading-relaxed">
-                      {contact.trustLine}
-                    </p>
+                    <div className="flex flex-col items-center gap-1 mt-2">
+                      <p className="text-center text-xs text-muted-foreground leading-relaxed">
+                        {contact.trustLine}
+                      </p>
+                      {contact.privacyLine && (
+                        <p className="text-center text-[10px] text-muted-foreground/70 leading-relaxed">
+                          {contact.privacyLine}
+                        </p>
+                      )}
+                    </div>
                   </form>
                 </Form>
               </CardContent>
