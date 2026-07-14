@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import config from "@/data/config.json";
 import type { LinkNode, RootConfig } from "@/types/data";
 
-const { links, about } = config as unknown as RootConfig;
+const { links } = config as unknown as RootConfig;
 const LINKS = links as LinkNode[];
 
 /** Internal hrefs (starting with /) use a plain <a>, external get target="_blank" */
@@ -32,33 +32,6 @@ function LinkItem({ link }: { link: LinkNode }) {
 export default function CredentialFooter() {
   return (
     <footer className="border-t border-border bg-card mt-16">
-
-      {/* ── About section ── */}
-      <div id="about" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-b border-border">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          <div>
-            <h2 className="text-xl font-bold text-foreground mb-3">{about.headline}</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-prose">
-              {about.bio}
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <p className="font-mono text-[10px] text-muted-foreground tracking-widest uppercase mb-1">
-              CREDENTIALS
-            </p>
-            {about.credentials.map((cred) => (
-              <Badge
-                key={cred}
-                variant="outline"
-                className="rounded-sm font-mono text-[10px] tracking-wide px-2.5 py-1.5 border-border text-muted-foreground w-fit whitespace-normal text-left h-auto leading-snug"
-              >
-                {cred}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* ── Footer links grid ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">

@@ -6,6 +6,7 @@ import HeroEngine from "@/components/sections/HeroEngine";
 import SolutionsShowcase from "@/components/sections/SolutionsShowcase";
 import OperationalHistory from "@/components/sections/OperationalHistory";
 import AuditPortal from "@/components/sections/AuditPortal";
+import AboutSection from "@/components/sections/AboutSection";
 import NotFound from "@/components/sections/NotFound";
 import LiveSystems from "@/pages/LiveSystems";
 
@@ -24,6 +25,7 @@ function PortfolioRoot() {
         <SolutionsShowcase />
         <OperationalHistory />
         <AuditPortal />
+        <AboutSection />
       </main>
       <CredentialFooter />
     </>
