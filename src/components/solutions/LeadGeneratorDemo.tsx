@@ -1,13 +1,26 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Linkedin, Twitter, Facebook, Instagram, MessageCircle, Mail, Phone } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface LeadRow {
   id: string;
   target_url: string;
   category: string;
-  email: string;
-  phone: string;
+  email?: string;
+  phone?: string;
+  contacts?: {
+    emailWithDomain?: string[];
+    email?: string[];
+    phone?: string[];
+  };
+  socials?: {
+    "X(twitter)"?: string[];
+    Facebook?: string[];
+    Whatsapp?: string[];
+    Instagram?: string[];
+    linkedIn?: string[];
+  };
   company_name: string;
   source_url: string;
   created_at: string;
@@ -16,9 +29,68 @@ interface LeadRow {
 const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
 const displayContact = (item: LeadRow) => {
-  if (item.email && !isUUID(item.email)) return item.email;
-  if (item.phone) return item.phone;
-  return "No contact listed";
+  // Legacy scalar fallback (if contacts doesn't exist yet)
+  if (!item.contacts && item.email && !isUUID(item.email)) return item.email;
+  if (!item.contacts && item.phone) return item.phone;
+
+  if (!item.contacts) return <span className="text-muted-foreground/50">No contact listed</span>;
+
+  const { emailWithDomain, email, phone } = item.contacts;
+  const allEmails = [...(emailWithDomain || []), ...(email || [])];
+  const allPhones = phone || [];
+
+  let primaryContact = "";
+  let extraCount = 0;
+  let isVerifiedDomain = false;
+  let contactIcon = null;
+
+  if (allEmails.length > 0) {
+    primaryContact = allEmails[0];
+    extraCount = (allEmails.length - 1) + allPhones.length;
+    isVerifiedDomain = !!(emailWithDomain && emailWithDomain.length > 0);
+    contactIcon = <Mail className="size-3 mr-1 opacity-70" />;
+  } else if (allPhones.length > 0) {
+    primaryContact = allPhones[0];
+    extraCount = allPhones.length - 1;
+    contactIcon = <Phone className="size-3 mr-1 opacity-70" />;
+  } else {
+    return <span className="text-muted-foreground/50">No contact listed</span>;
+  }
+
+  const activeSocials = item.socials
+    ? Object.entries(item.socials).filter(([_, links]) => Array.isArray(links) && links.length > 0)
+    : [];
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2">
+        <div className="flex items-center truncate max-w-[200px]" title={primaryContact}>
+          {contactIcon}
+          <span className={`truncate ${isVerifiedDomain ? 'text-primary font-medium' : ''}`}>
+            {primaryContact}
+          </span>
+        </div>
+        {extraCount > 0 && <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4">+{extraCount}</Badge>}
+      </div>
+      
+      {activeSocials.length > 0 && (
+        <div className="flex items-center gap-1.5 opacity-60">
+          {activeSocials.map(([network, links]) => {
+            const link = (links as string[])[0];
+            return (
+              <a key={network} href={link} target="_blank" rel="noreferrer" title={network} className="hover:text-primary transition-colors">
+                {network === 'linkedIn' && <Linkedin className="size-3" />}
+                {network === 'X(twitter)' && <Twitter className="size-3" />}
+                {network === 'Facebook' && <Facebook className="size-3" />}
+                {network === 'Instagram' && <Instagram className="size-3" />}
+                {network === 'Whatsapp' && <MessageCircle className="size-3" />}
+              </a>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default function LeadGeneratorDemo() {

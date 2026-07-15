@@ -138,12 +138,12 @@
   },
   "about": {
     "headline": "Engineering rigor, applied to AI.",
-    "bio": "I'm Jodinho — a First-Class Mechanical Engineering graduate who moved deliberately into AI engineering, now an Azure AI Engineer Associate (2024). I build the kind of systems most agencies talk about but few actually ship: production RAG pipelines, resilient scraping infrastructure, and automation that runs unattended. Joule Dynamics exists to bring that same engineering rigor to problems that are currently costing you time or money.",
+    "bio": "I'm John — an Azure AI Engineer Associate who builds the kind of systems most agencies talk about but few actually ship: production RAG pipelines, resilient scraping infrastructure, and automation that runs unattended, day and night. Joule Dynamics turns that same discipline on the three things quietly costing you money right now — pricing you can't see, leads you're not catching, and support questions your team answers by hand, every day.",
     "credentials": [
-      "First-Class Mechanical Engineering (CGPA 4.63/5.00)",
-      "Azure AI Engineer Associate (AI-102), 2024",
-      "Departmental Best Graduate"
-    ]
+    "Azure AI Engineer Associate (AI-102), 2024",
+    "3 Production Systems, Live Right Now",
+    "Founder, Joule Dynamics"
+  ]
   },
   "contact": {
     "headline": "Let's find what's automatable in your business.",

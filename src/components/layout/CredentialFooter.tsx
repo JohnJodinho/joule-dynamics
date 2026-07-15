@@ -1,9 +1,8 @@
 /**
  * CredentialFooter.tsx
- * Revamp: adds the About blurb + credentials section from config.about
- * above the existing footer links grid.
+ * Lean footer: brand lock, direct-access nav links, and SYS bar.
+ * Credentials/About content lives in AboutSection (homepage only).
  */
-import { Badge } from "@/components/ui/badge";
 import config from "@/data/config.json";
 import type { LinkNode, RootConfig } from "@/types/data";
 
@@ -32,10 +31,8 @@ function LinkItem({ link }: { link: LinkNode }) {
 export default function CredentialFooter() {
   return (
     <footer className="border-t border-border bg-card mt-16">
-
-      {/* ── Footer links grid ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
 
           {/* ── Column 1: Brand Lock ── */}
           <div className="flex flex-col gap-1">
@@ -47,27 +44,8 @@ export default function CredentialFooter() {
             </p>
           </div>
 
-          {/* ── Column 2: Verified Credentials ── */}
-          <div className="flex flex-col gap-2">
-            <p className="font-mono text-[10px] text-muted-foreground tracking-widest uppercase mb-1">
-              VERIFIED
-            </p>
-            <Badge
-              variant="default"
-              className="rounded-sm font-mono text-[10px] tracking-wider px-2.5 py-1.5 bg-primary text-primary-foreground w-fit whitespace-normal text-left h-auto leading-snug"
-            >
-              [VERIFIED] B.Eng. Mechanical Engineering (First Class)
-            </Badge>
-            <Badge
-              variant="outline"
-              className="rounded-sm font-mono text-[10px] tracking-wider px-2.5 py-1.5 border-border text-muted-foreground w-fit whitespace-normal text-left h-auto leading-snug"
-            >
-              Microsoft Azure AI Engineer Associate (2024)
-            </Badge>
-          </div>
-
-          {/* ── Columns 3–4: Direct Access Links ── */}
-          <div className="md:col-span-2 xl:col-span-2 flex flex-col gap-2">
+          {/* ── Columns 2–3: Direct Access Links ── */}
+          <div className="md:col-span-2 flex flex-col gap-2">
             <p className="font-mono text-[10px] text-muted-foreground tracking-widest uppercase mb-1">
               DIRECT ACCESS
             </p>
@@ -80,7 +58,7 @@ export default function CredentialFooter() {
 
         </div>
 
-        {/* ── Bottom rule ── */}
+        {/* ── Bottom SYS bar ── */}
         <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="font-mono text-[10px] text-muted-foreground tracking-widest">
             SYS // JOULE-DYNAMICS-V2.0.0 · STACK: REACT 19 · VITE · TAILWIND V4 · SHADCN
@@ -90,7 +68,6 @@ export default function CredentialFooter() {
           </p>
         </div>
       </div>
-
     </footer>
   );
 }
