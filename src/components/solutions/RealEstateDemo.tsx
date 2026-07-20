@@ -58,11 +58,17 @@ export default function RealEstateDemo() {
         const typed = (rows as unknown as RateRow[]) || [];
         setData(typed);
         if (typed.length > 0 && !selectedPropertyId) {
-          // Default to first NYC/NJ property if available, else first row
-          const nycProp = typed.find(
+          // Default to the NYC/NJ property with the highest |pct_above_trailing_avg|
+          const nycProps = typed.filter(
             (r) => r.market && (r.market.toLowerCase().includes("nyc") || r.market.toLowerCase().includes("nj"))
           );
-          setSelectedPropertyId(nycProp?.property_id ?? typed[0].property_id);
+          const targetPool = nycProps.length > 0 ? nycProps : typed;
+          const mostVolatile = targetPool.reduce((prev, curr) => {
+            const prevVal = Math.abs(prev.pct_above_trailing_avg ?? 0);
+            const currVal = Math.abs(curr.pct_above_trailing_avg ?? 0);
+            return currVal > prevVal ? curr : prev;
+          }, targetPool[0]);
+          setSelectedPropertyId(mostVolatile.property_id);
         }
       }
     } catch (err) {
@@ -120,14 +126,14 @@ export default function RealEstateDemo() {
     ).values()
   ).slice(0, 4);
 
-  // Chart data: nightly_rate over stay_date for selected property (chronological)
+  // Chart data: nightly_rate over time for selected property (chronological)
   const chartData = data
     .filter((r) => r.property_id === selectedPropertyId)
+    .sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()) // recorded_at ascending
     .map((r) => ({
       ...r,
-      dateShort: new Date(r.stay_date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-    }))
-    .reverse(); // stay_date ascending
+      dateShort: new Date(r.recorded_at).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "numeric" }),
+    }));
 
 
   const formatRate = (r: RateRow) =>
@@ -282,6 +288,7 @@ export default function RealEstateDemo() {
                     <th className="px-4 py-2.5 font-medium">Property</th>
                     <th className="px-4 py-2.5 font-medium">Market</th>
                     <th className="px-4 py-2.5 font-medium">Platform</th>
+                    <th className="px-4 py-2.5 font-medium">Stay Date</th>
                     <th className="px-4 py-2.5 font-medium">Rate</th>
                     <th className="px-4 py-2.5 font-medium">vs 7d Avg</th>
                     <th className="px-4 py-2.5 font-medium">Available</th>
@@ -296,10 +303,31 @@ export default function RealEstateDemo() {
                       : pct >= 25 ? "text-amber-400 font-semibold"
                       : pct > 0 ? "text-green-500"
                       : "text-red-400";
+                      
+                    const hoursSince = (Date.now() - new Date(row.recorded_at).getTime()) / (1000 * 60 * 60);
+                    const isStale = hoursSince > 24;
+                    const isPriced = row.nightly_rate !== null;
+
+                    const lastPricedRow = data.find(r => r.property_id === row.property_id && r.nightly_rate !== null);
+
+                    let rateDisplay: React.ReactNode;
+                    if (isPriced) {
+                      rateDisplay = formatRate(row);
+                    } else {
+                      const suffix = lastPricedRow 
+                        ? <span className="text-muted-foreground font-normal text-[10px] ml-1 text-nowrap whitespace-nowrap opacity-70">(last ${lastPricedRow.nightly_rate}, {new Date(lastPricedRow.recorded_at).toLocaleDateString(undefined, {month:'short',day:'numeric'})})</span>
+                        : null;
+                      if (isStale) {
+                         rateDisplay = <span className="text-amber-500/80 font-medium">Stale — checked {new Date(row.recorded_at).toLocaleDateString(undefined, {month:'short',day:'numeric'})} {suffix}</span>;
+                      } else {
+                         rateDisplay = <span className="text-muted-foreground font-medium">Unavailable {suffix}</span>;
+                      }
+                    }
+
                     return (
                       <tr
                         key={row.property_id}
-                        className={`hover:bg-muted/30 transition-colors cursor-pointer ${row.property_id === selectedPropertyId ? "bg-muted/20" : ""}`}
+                        className={`hover:bg-muted/30 transition-colors cursor-pointer ${row.property_id === selectedPropertyId ? "bg-muted/20" : ""} ${isStale ? "opacity-60" : ""}`}
                         onClick={() => setSelectedPropertyId(row.property_id)}
                       >
                         <td className="px-4 py-3 font-medium text-foreground max-w-[160px] truncate" title={row.property_name}>
@@ -307,7 +335,10 @@ export default function RealEstateDemo() {
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">{row.market || "—"}</td>
                         <td className="px-4 py-3 text-muted-foreground">{row.platform || "—"}</td>
-                        <td className="px-4 py-3 font-medium text-foreground">{formatRate(row)}</td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {new Date(row.stay_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-foreground">{rateDisplay}</td>
                         <td className={`px-4 py-3 ${pctColor}`}>
                           {pct !== null ? `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%` : "—"}
                         </td>

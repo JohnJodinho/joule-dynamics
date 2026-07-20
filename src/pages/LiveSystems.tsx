@@ -26,9 +26,10 @@ interface KPIData {
   };
   real_estate: {
     properties_tracked: number;
-    rates_logged: number;
+    rate_changes_7d: number;
     spikes_7d: number;
-    last_scrape_status: string | null;
+    tracking_since: string | null;
+    last_scrape_status: Record<string, string> | null;
   } | null;
 }
 
@@ -137,13 +138,23 @@ export default function LiveSystems() {
             {loading || !kpis ? renderSkeletonKpis() : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <KPICard label="Properties Tracked" value={kpis.real_estate?.properties_tracked ?? '—'} />
-                <KPICard label="Rates Logged" value={kpis.real_estate?.rates_logged ?? '—'} />
+                <KPICard label="Rate Changes (7d)" value={kpis.real_estate?.rate_changes_7d ?? '—'} />
                 <KPICard label="25%+ Spikes (7d)" value={kpis.real_estate?.spikes_7d ?? '—'} />
-                <KPICard
-                  label="Last Scrape Status"
-                  value={kpis.real_estate?.last_scrape_status || 'Pending'}
-                  valueClass={statusColor(kpis.real_estate?.last_scrape_status ?? null)}
-                />
+                <div className="flex flex-col p-4 bg-card border border-border rounded-lg shadow-sm">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Scrape Status</span>
+                  <div className="flex flex-col gap-1 mt-1">
+                    {kpis.real_estate?.last_scrape_status ? (
+                      Object.entries(kpis.real_estate.last_scrape_status).map(([platform, status]) => (
+                        <div key={platform} className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground capitalize">{platform}</span>
+                          <span className={`text-sm font-semibold ${statusColor(status)}`}>{status}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <span className="text-2xl font-semibold text-muted-foreground">Pending</span>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </ErrorBoundary>

@@ -57,8 +57,10 @@ export function SystemStatusBar() {
 
         {/* Left: Brand slug & Desktop Nav */}
         <div className="flex items-center gap-6">
-          <span className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase shrink-0">
-            <a href="/" className="hover:text-foreground transition-colors">JOULE//DYNAMICS</a>
+          <span className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase shrink-0 flex items-center">
+            <a href="/" className="hover:text-foreground transition-colors flex items-center">
+              JOULE<img src="/joule-dynamics.svg" alt="//" className="h-3 w-auto inline-block mx-1" />DYNAMICS
+            </a>
           </span>
 
           {/* Desktop Nav */}
