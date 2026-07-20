@@ -131,7 +131,7 @@ export default function RealEstateDemo() {
 
 
   const formatRate = (r: RateRow) =>
-    `${r.currency === "USD" ? "$" : r.currency}${r.nightly_rate.toFixed(0)}/night`;
+    `${r.currency === "USD" ? "$" : r.currency}${r.nightly_rate?.toFixed(0) ?? "N/A"}/night`;
 
   if (data.length === 0) {
     return (
@@ -171,7 +171,7 @@ export default function RealEstateDemo() {
                 </div>
                 <div className="flex flex-col items-end gap-0.5 shrink-0">
                   <span className="font-bold text-amber-400 text-sm">
-                    {spike.currency === "USD" ? "$" : spike.currency}{spike.nightly_rate.toFixed(0)}
+                    {spike.currency === "USD" ? "$" : spike.currency}{spike.nightly_rate?.toFixed(0) ?? "N/A"}
                     <span className="text-[10px] font-normal text-muted-foreground ml-1">/ night</span>
                   </span>
                   <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-amber-500/40 text-amber-400 font-mono">
