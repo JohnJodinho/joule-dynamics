@@ -28,6 +28,10 @@ interface LeadRow {
 
 const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
+/** Strip the `tel:` prefix and URL-decode encoded phone numbers (e.g. `tel:%2B6421…` → `+6421…`) */
+const cleanPhone = (raw: string) =>
+  decodeURIComponent(raw.replace(/^tel:/i, "")).trim();
+
 const displayContact = (item: LeadRow) => {
   // Legacy scalar fallback (if contacts doesn't exist yet)
   if (!item.contacts && item.email && !isUUID(item.email)) return item.email;
@@ -50,7 +54,7 @@ const displayContact = (item: LeadRow) => {
     isVerifiedDomain = !!(emailWithDomain && emailWithDomain.length > 0);
     contactIcon = <Mail className="size-3 mr-1 opacity-70" />;
   } else if (allPhones.length > 0) {
-    primaryContact = allPhones[0];
+    primaryContact = cleanPhone(allPhones[0]);
     extraCount = allPhones.length - 1;
     contactIcon = <Phone className="size-3 mr-1 opacity-70" />;
   } else {

@@ -26,7 +26,7 @@ export default function SolutionsShowcase() {
       {/* ── Intro copy ── */}
       <div className="mb-8">
         <h2 className="text-2xl md:text-3xl font-bold text-foreground leading-snug max-w-2xl">
-          Three problems we solve — with systems that run themselves.
+          Four things quietly costing you money — with systems that fix them on autopilot.
         </h2>
         <p className="mt-3 text-muted-foreground text-sm md:text-base max-w-xl leading-relaxed">
           Each solution is a working system, not a proposal. Pick the one that maps to your biggest current bottleneck.

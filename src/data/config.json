@@ -49,8 +49,35 @@
       "ctaLink": "/live-systems#pricing"
     },
     {
-      "id": "lead-generator",
+      "id": "real-estate-monitor",
       "order": 2,
+      "isPublished": true,
+      "category": "Real Estate Intelligence",
+      "title": "Know Before Your Competitors Which Listings Are Underpricing",
+      "problemStatement": "Property managers reprice manually and reactively — usually after they've already lost bookings to a competitor who moved first.",
+      "solutionDescription": "An always-on rate monitor that tracks nightly prices across Airbnb and direct listings, flags anomalies against a 7-day trailing average, and surfaces high-volatility opportunities the moment they appear.",
+      "demo": {
+        "kind": "interactive",
+        "url": "",
+        "altText": "Real estate rate volatility monitor showing live nightly rate movements",
+        "fallbackNote": "Loading live rate monitor..."
+      },
+      "roiMetrics": [
+        {
+          "label": "Occupancy Uplift",
+          "value": "12–18%",
+          "context": "via dynamic repricing",
+          "metricType": "revenue",
+          "isBenchmark": true
+        }
+      ],
+      "techStackTags": ["Python", "Playwright", "BrightData", "PostgreSQL"],
+      "ctaLabel": "See live rate movements →",
+      "ctaLink": "/live-systems#real-estate"
+    },
+    {
+      "id": "lead-generator",
+      "order": 3,
       "isPublished": true,
       "category": "B2B Lead Generation",
       "title": "100 Qualified Leads a Week, on Autopilot",
@@ -77,7 +104,7 @@
     },
     {
       "id": "support-bot",
-      "order": 3,
+      "order": 4,
       "isPublished": true,
       "category": "RAG / Conversational AI",
       "title": "Answers Your Customers Instantly, From Your Own Docs",
