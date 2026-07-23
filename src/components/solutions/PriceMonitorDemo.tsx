@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -9,20 +9,41 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Scatter,
+  ComposedChart
 } from "recharts";
-import { Bell, ArrowDownRight, ArrowUpRight, ArrowRight } from "lucide-react";
+import { Bell, ArrowDownRight, ArrowUpRight, ChevronRight, ChevronDown } from "lucide-react";
 
-interface PriceRow {
+interface SpreadRow {
+  sku: string;
+  name: string;
+  category: string;
+  retailers_tracked: number;
+  min_price: number;
+  max_price: number;
+  avg_price: number;
+  spread: number;
+  spread_pct: number;
+  last_checked: string;
+}
+
+interface CategoryTrendRow {
+  category: string;
+  day: string;
+  category_index: number;
+}
+
+interface VolatilityRow {
   id: string;
   product_id: string;
-  product_name: string;
-  url: string;
-  price: number;
-  currency: string;
+  name: string;
+  sku: string;
+  retailer: string;
+  category: string;
   created_at: string;
-  tier_used: string;
-  previous_price: number | null;
-  pct_change: number | null;
+  price: number;
+  trailing_avg_price: number | null;
+  pct_above_trailing_avg: number | null;
 }
 
 interface AlertRow {
@@ -39,36 +60,34 @@ interface AlertRow {
 }
 
 export default function PriceMonitorDemo() {
-  const [data, setData] = useState<PriceRow[]>([]);
+  const [spreadData, setSpreadData] = useState<SpreadRow[]>([]);
+  const [trendData, setTrendData] = useState<CategoryTrendRow[]>([]);
+  const [volatilityData, setVolatilityData] = useState<VolatilityRow[]>([]);
   const [alerts, setAlerts] = useState<AlertRow[]>([]);
+  
   const [loading, setLoading] = useState(true);
   const [loadingAlerts, setLoadingAlerts] = useState(true);
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [expandedSku, setExpandedSku] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
-      const { data: rows, error } = await supabase
-        .from("v_recent_prices")
-        .select("*")
-        .not("product_id", "is", null)
-        .not("product_name", "is", null)
-        .order("created_at", { ascending: false });
+      const [spreadRes, trendRes, volRes] = await Promise.all([
+        supabase.from("v_price_spread_latest").select("*").order("spread_pct", { ascending: false }),
+        supabase.from("v_category_price_index").select("*").order("day", { ascending: true }),
+        supabase.from("v_price_volatility").select("*").order("created_at", { ascending: true })
+      ]);
 
-      if (error) {
-        console.error("Error fetching prices:", error);
-      } else {
-        const typedRows = (rows as unknown as PriceRow[]) || [];
-        setData(typedRows);
-        if (typedRows.length > 0 && !selectedProductId) {
-          // Group by product_id to find unique products
-          const uniqueProducts = Array.from(new Set(typedRows.map(r => r.product_id)));
-          if (uniqueProducts.length > 0) {
-            setSelectedProductId(uniqueProducts[0]);
-          }
-        }
-      }
+      if (spreadRes.error) console.error("Error fetching spread:", spreadRes.error);
+      else setSpreadData((spreadRes.data as unknown as SpreadRow[]) || []);
+
+      if (trendRes.error) console.error("Error fetching trend:", trendRes.error);
+      else setTrendData((trendRes.data as unknown as CategoryTrendRow[]) || []);
+
+      if (volRes.error) console.error("Error fetching volatility:", volRes.error);
+      else setVolatilityData((volRes.data as unknown as VolatilityRow[]) || []);
+
     } catch (err) {
-      console.error("Unexpected error fetching prices:", err);
+      console.error("Unexpected error fetching pricing data:", err);
     } finally {
       setLoading(false);
     }
@@ -81,11 +100,8 @@ export default function PriceMonitorDemo() {
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching alerts:", error);
-      } else {
-        setAlerts((rows as unknown as AlertRow[]) || []);
-      }
+      if (error) console.error("Error fetching alerts:", error);
+      else setAlerts((rows as unknown as AlertRow[]) || []);
     } catch (err) {
       console.error("Unexpected error fetching alerts:", err);
     } finally {
@@ -97,7 +113,6 @@ export default function PriceMonitorDemo() {
     void fetchData();
     void fetchAlerts();
 
-    // Realtime subscriptions
     const priceChannel = supabase
       .channel('public:price_history')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'price_history' }, () => {
@@ -136,7 +151,7 @@ export default function PriceMonitorDemo() {
     );
   }
 
-  // Color helper
+  // Color helpers
   const getPctChangeColor = (pct: number | null) => {
     if (pct === null || pct === 0) return "text-muted-foreground";
     return pct < 0 ? "text-red-500" : "text-green-500";
@@ -148,24 +163,28 @@ export default function PriceMonitorDemo() {
     return `${sign}${pct.toFixed(1)}%`;
   };
 
-  // Derived state
-  const uniqueProducts = Array.from(
-    new Map(data.map((item) => [item.product_id, { id: item.product_id, name: item.product_name }])).values()
-  );
-
-  // For the table, we only want the LATEST entry per product
-  const latestPrices = uniqueProducts.map(p => {
-    return data.find(d => d.product_id === p.id)!;
+  // Process Category Trend Data
+  const categories = Array.from(new Set(trendData.map(d => d.category || "Uncategorized")));
+  
+  // Pivot trendData: { day: '...', Electronics: 105, Home: 98 }
+  const trendPivotMap = new Map<string, any>();
+  trendData.forEach(r => {
+    const dShort = new Date(r.day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    if (!trendPivotMap.has(dShort)) {
+      trendPivotMap.set(dShort, { dayShort: dShort });
+    }
+    const cat = r.category || "Uncategorized";
+    trendPivotMap.get(dShort)[cat] = r.category_index;
   });
+  const chartTrendData = Array.from(trendPivotMap.values());
 
-  // For the chart, we want all history for the selected product, sorted chronological
-  const chartData = data
-    .filter((d) => d.product_id === selectedProductId)
-    .map((d) => ({
-      ...d,
-      dateShort: new Date(d.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-    }))
-    .reverse(); // Reverse so older dates are first on x-axis
+  const categoryColors = [
+    "var(--color-primary)",
+    "#10b981", // green-500
+    "#f59e0b", // amber-500
+    "#6366f1", // indigo-500
+    "#ec4899", // pink-500
+  ];
 
   return (
     <div className="flex w-full flex-col gap-8 bg-card p-6 text-sm">
@@ -208,30 +227,16 @@ export default function PriceMonitorDemo() {
         </div>
       )}
 
-      {/* Chart Section */}
+      {/* Category Trend Section */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h4 className="font-semibold text-foreground">Price History</h4>
-          {uniqueProducts.length > 0 && (
-            <select 
-              className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary max-w-[150px] truncate"
-              value={selectedProductId || ""}
-              onChange={(e) => setSelectedProductId(e.target.value)}
-            >
-              {uniqueProducts.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          )}
-        </div>
-        
-        {chartData.length > 0 ? (
+        <h4 className="font-semibold text-foreground">Category Price Index (Base 100)</h4>
+        {chartTrendData.length > 0 ? (
           <div className="h-64 w-full border border-border/50 rounded-lg bg-card/50 p-4">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
+              <LineChart data={chartTrendData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} opacity={0.5} />
                 <XAxis 
-                  dataKey="dateShort" 
+                  dataKey="dayShort" 
                   tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} 
                   tickLine={false}
                   axisLine={false}
@@ -240,7 +245,6 @@ export default function PriceMonitorDemo() {
                 <YAxis 
                   domain={['auto', 'auto']}
                   tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
-                  tickFormatter={(val) => `$${val}`}
                   tickLine={false}
                   axisLine={false}
                   dx={-5}
@@ -248,81 +252,110 @@ export default function PriceMonitorDemo() {
                 <Tooltip 
                   contentStyle={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", borderRadius: "6px", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
                   itemStyle={{ color: "var(--color-foreground)", fontSize: "12px", fontWeight: 500 }}
-                  formatter={(value: any) => {
-                    const numValue = typeof value === 'number' ? value : parseFloat(value);
-                    return [`$${numValue.toFixed(2)}`, "Price"];
-                  }}
                   labelStyle={{ color: "var(--color-muted-foreground)", marginBottom: "4px", fontSize: "11px" }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="price" 
-                  stroke="var(--color-primary)" 
-                  strokeWidth={2} 
-                  dot={{ r: 3, fill: "var(--color-card)", strokeWidth: 2, stroke: "var(--color-primary)" }}
-                  activeDot={{ r: 5, fill: "var(--color-primary)" }}
-                />
+                {categories.map((cat, i) => (
+                  <Line 
+                    key={cat}
+                    type="monotone" 
+                    dataKey={cat} 
+                    name={cat}
+                    stroke={categoryColors[i % categoryColors.length]} 
+                    strokeWidth={2} 
+                    dot={false}
+                    activeDot={{ r: 5 }}
+                  />
+                ))}
               </LineChart>
             </ResponsiveContainer>
           </div>
         ) : (
           <div className="h-64 w-full border border-border/50 rounded-lg bg-card/50 p-4 flex items-center justify-center">
-            <p className="text-xs text-muted-foreground">No chart data</p>
+            <p className="text-xs text-muted-foreground">No trend data yet.</p>
           </div>
         )}
       </div>
 
-      {/* Table Section */}
+      {/* Market Spreads Section */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h4 className="font-semibold text-foreground">Latest Competitor Pricing</h4>
-          {latestPrices.length > 0 && (
-            <span className="text-[10px] text-muted-foreground sm:hidden flex items-center gap-1">Swipe <ArrowRight className="size-3"/></span>
-          )}
-        </div>
-        {latestPrices.length > 0 ? (
+        <h4 className="font-semibold text-foreground">Market Spread per SKU</h4>
+        
+        {spreadData.length > 0 ? (
           <div className="relative w-full rounded-md border border-border shadow-sm overflow-hidden">
-            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent pointer-events-none sm:hidden z-10"></div>
             <div className="w-full overflow-x-auto">
               <table className="w-full text-left text-xs whitespace-nowrap">
-              <thead className="border-b border-border bg-muted/30 text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-2.5 font-medium">Product</th>
-                  <th className="px-4 py-2.5 font-medium">Price</th>
-                  <th className="px-4 py-2.5 font-medium">Change</th>
-                  <th className="px-4 py-2.5 font-medium">Last Checked</th>
-                  <th className="px-4 py-2.5 font-medium text-right">Method</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {latestPrices.map(item => (
-                  <tr 
-                    key={item.id} 
-                    className={`hover:bg-muted/30 transition-colors cursor-pointer ${item.product_id === selectedProductId ? 'bg-muted/20' : ''}`}
-                    onClick={() => setSelectedProductId(item.product_id)}
-                  >
-                    <td className="px-4 py-3 font-medium text-foreground max-w-[180px] truncate" title={item.product_name}>
-                      {item.product_name}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-foreground">
-                      {item.currency === "USD" ? "$" : item.currency}{item.price.toFixed(2)}
-                    </td>
-                    <td className={`px-4 py-3 font-semibold ${getPctChangeColor(item.pct_change)}`}>
-                      {formatPct(item.pct_change)}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                      <span className="mx-1 opacity-50">·</span>
-                      {new Date(item.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-mono text-muted-foreground/70 border-border/60 uppercase tracking-wider bg-transparent">
-                        {item.tier_used || 'std'}
-                      </Badge>
-                    </td>
+                <thead className="border-b border-border bg-muted/30 text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-2.5 font-medium w-8"></th>
+                    <th className="px-4 py-2.5 font-medium">Product / SKU</th>
+                    <th className="px-4 py-2.5 font-medium">Category</th>
+                    <th className="px-4 py-2.5 font-medium">Spread Range</th>
+                    <th className="px-4 py-2.5 font-medium text-right">Spread %</th>
                   </tr>
-                ))}
-              </tbody>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {spreadData.map((row) => {
+                    const isExpanded = expandedSku === row.sku;
+                    return (
+                      <React.Fragment key={row.sku}>
+                        <tr 
+                          className={`hover:bg-muted/30 transition-colors cursor-pointer ${isExpanded ? 'bg-muted/20' : ''}`}
+                          onClick={() => setExpandedSku(isExpanded ? null : row.sku)}
+                        >
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {isExpanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-foreground max-w-[200px] truncate" title={row.name}>{row.name}</span>
+                              <span className="text-[10px] text-muted-foreground font-mono mt-0.5">{row.sku}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {row.category || "—"}
+                          </td>
+                          <td className="px-4 py-3 min-w-[200px]">
+                            {row.retailers_tracked > 1 ? (
+                              <div className="flex items-center gap-3">
+                                <span className="font-mono text-[10px]">${row.min_price.toFixed(2)}</span>
+                                <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden relative">
+                                  {/* Just a visual indicator of the spread */}
+                                  <div className="absolute top-0 bottom-0 left-0 right-0 bg-primary/20 rounded-full" />
+                                  <div 
+                                    className="absolute top-0 bottom-0 bg-primary rounded-full w-1.5 h-1.5 -ml-[0.75rem]" 
+                                    style={{ left: `${((row.avg_price - row.min_price) / (row.max_price - row.min_price)) * 100}%` }}
+                                  />
+                                </div>
+                                <span className="font-mono text-[10px]">${row.max_price.toFixed(2)}</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <span>${row.avg_price.toFixed(2)}</span>
+                                <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-mono text-muted-foreground/70 bg-transparent">1 RETAILER</Badge>
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {row.retailers_tracked > 1 ? (
+                              <span className="font-semibold text-foreground">{row.spread_pct.toFixed(1)}%</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                        </tr>
+                        
+                        {/* Expanded Drill-down */}
+                        {isExpanded && (
+                          <tr className="bg-muted/10 border-b-0">
+                            <td colSpan={5} className="p-0">
+                              <DrillDownChart sku={row.sku} volatilityData={volatilityData} />
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
               </table>
             </div>
           </div>
@@ -334,6 +367,107 @@ export default function PriceMonitorDemo() {
         )}
       </div>
 
+    </div>
+  );
+}
+
+// Sub-component for the expanded drill-down chart
+function DrillDownChart({ sku, volatilityData }: { sku: string; volatilityData: VolatilityRow[] }) {
+  const skuData = useMemo(() => {
+    return volatilityData.filter(d => d.sku === sku);
+  }, [sku, volatilityData]);
+
+  if (skuData.length === 0) {
+    return <div className="p-4 text-center text-xs text-muted-foreground border-t border-border/50">No history available for this SKU.</div>;
+  }
+
+  // Pivot data by retailer
+  const retailers = Array.from(new Set(skuData.map(d => d.retailer || "Unknown")));
+  const pivotMap = new Map<string, any>();
+  
+  skuData.forEach(r => {
+    const dShort = new Date(r.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    if (!pivotMap.has(dShort)) {
+      pivotMap.set(dShort, { dateShort: dShort, timestamp: new Date(r.created_at).getTime() });
+    }
+    const ret = r.retailer || "Unknown";
+    pivotMap.get(dShort)[ret] = r.price;
+  });
+
+  const chartData = Array.from(pivotMap.values()).sort((a, b) => a.timestamp - b.timestamp);
+  
+  const colors = [
+    "var(--color-primary)",
+    "#10b981",
+    "#f59e0b",
+    "#ec4899"
+  ];
+
+  const hasMultiplePoints = chartData.length > 1;
+
+  return (
+    <div className="p-4 border-t border-border/50 bg-background/50 flex flex-col gap-3 shadow-inner">
+      <div className="flex items-center justify-between px-2">
+        <h5 className="font-medium text-xs text-foreground flex items-center gap-2">
+          <span className="w-1 h-3 rounded-full bg-primary" />
+          Retailer History
+        </h5>
+      </div>
+      <div className="h-48 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} opacity={0.5} />
+            <XAxis 
+              dataKey="dateShort" 
+              tick={{ fontSize: 9, fill: "var(--color-muted-foreground)" }} 
+              tickLine={false}
+              axisLine={false}
+              dy={5}
+            />
+            <YAxis 
+              domain={['auto', 'auto']}
+              tick={{ fontSize: 9, fill: "var(--color-muted-foreground)" }}
+              tickFormatter={(val) => `$${val}`}
+              tickLine={false}
+              axisLine={false}
+              dx={-5}
+            />
+            <Tooltip 
+              contentStyle={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", borderRadius: "6px", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
+              itemStyle={{ color: "var(--color-foreground)", fontSize: "11px", fontWeight: 500 }}
+              labelStyle={{ color: "var(--color-muted-foreground)", marginBottom: "4px", fontSize: "10px" }}
+              formatter={(value: any, name: any) => [`$${Number(value).toFixed(2)}`, String(name)]}
+            />
+            {retailers.map((ret, i) => {
+              if (hasMultiplePoints) {
+                return (
+                  <Line 
+                    key={ret}
+                    type="monotone" 
+                    dataKey={ret} 
+                    name={ret}
+                    stroke={colors[i % colors.length]} 
+                    strokeWidth={2} 
+                    dot={{ r: 3, fill: "var(--color-card)", strokeWidth: 2 }}
+                    activeDot={{ r: 5 }}
+                    connectNulls
+                  />
+                );
+              } else {
+                return (
+                  <Scatter 
+                    key={ret} 
+                    dataKey={ret} 
+                    name={ret} 
+                    fill={colors[i % colors.length]} 
+                    shape="circle"
+                  />
+                );
+              }
+            })}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

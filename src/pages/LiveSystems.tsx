@@ -15,6 +15,7 @@ interface KPIData {
   pricing: {
     products_tracked: number;
     price_changes_7d: number;
+    spikes_7d: number;
     last_scrape_status: string | null;
     tracking_since: string | null;
   };
@@ -98,9 +99,10 @@ export default function LiveSystems() {
 
           <ErrorBoundary fallbackMessage="Failed to load Pricing KPIs.">
             {loading || !kpis ? renderSkeletonKpis() : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                 <KPICard label="Products Tracked" value={kpis.pricing.products_tracked} />
                 <KPICard label="Price Changes (7d)" value={kpis.pricing.price_changes_7d} />
+                <KPICard label="25%+ Spikes (7d)" value={kpis.pricing.spikes_7d} />
                 <KPICard
                   label="Last Scrape Status"
                   value={kpis.pricing.last_scrape_status || 'Pending'}
