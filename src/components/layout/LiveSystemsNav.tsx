@@ -4,7 +4,7 @@
  * Uses IntersectionObserver to highlight the active section as the user scrolls.
  * Clicking a label smooth-scrolls to the section and updates the URL hash.
  */
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocation } from "react-router-dom";
 
 const SECTIONS = [
@@ -19,47 +19,80 @@ type SectionId = typeof SECTIONS[number]["id"];
 export default function LiveSystemsNav() {
   const [active, setActive] = useState<SectionId>("pricing");
   const location = useLocation();
+  const isScrollingToHash = useRef(false);
 
-  // Sync active tab with URL hash on mount / hash change
+  // Initial scroll and hash sync
   useEffect(() => {
     const hash = location.hash.replace("#", "") as SectionId;
     if (SECTIONS.some((s) => s.id === hash)) {
       setActive(hash);
+      // Wait for layout to settle, then scroll to the correct section
+      // We do this in a few cascading timeouts to handle React's render cycles and async data loading layout shifts.
+      isScrollingToHash.current = true;
+      const scrollIt = () => {
+        const el = document.getElementById(hash);
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+      };
+      
+      scrollIt();
+      const t1 = setTimeout(scrollIt, 500);
+      const t2 = setTimeout(() => {
+        scrollIt();
+        isScrollingToHash.current = false;
+      }, 1500);
+
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     }
   }, [location.hash]);
 
-  // IntersectionObserver — fire when a section is >= 30% visible
+  // Robust scroll spy
   useEffect(() => {
-    const observers: IntersectionObserver[] = [];
+    const handleScroll = () => {
+      if (isScrollingToHash.current) return; // Don't override while auto-scrolling
 
-    SECTIONS.forEach(({ id }) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-
-      const obs = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            setActive(id);
-            // Silently update hash without pushing to history
-            window.history.replaceState(null, "", `#${id}`);
+      // Trigger line is slightly below the sticky nav (approx 120px + some padding)
+      const triggerY = 200; 
+      
+      let currentSection = active;
+      for (const section of SECTIONS) {
+        const el = document.getElementById(section.id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          // If the top of the element is above our trigger line, and its bottom is below it, it's currently intersecting.
+          // We also include elements whose top is very close to the trigger line.
+          if (rect.top <= triggerY && rect.bottom > triggerY) {
+            currentSection = section.id;
+            break;
           }
-        },
-        { threshold: 0.25, rootMargin: "-80px 0px -30% 0px" }
-      );
-      obs.observe(el);
-      observers.push(obs);
-    });
+        }
+      }
+      
+      if (currentSection !== active) {
+         setActive(currentSection);
+         window.history.replaceState(null, "", `#${currentSection}`);
+      }
+    };
 
-    return () => observers.forEach((o) => o.disconnect());
-  }, []);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [active]);
 
   const handleClick = useCallback((id: SectionId) => {
+      isScrollingToHash.current = true;
       setActive(id);
       const el = document.getElementById(id);
       if (el) {
         el.scrollIntoView({ behavior: "smooth" });
         window.history.replaceState(null, "", `#${id}`);
       }
+      
+      // Release the lock after smooth scroll is likely finished
+      setTimeout(() => {
+        isScrollingToHash.current = false;
+      }, 1000);
     },
     []
   );

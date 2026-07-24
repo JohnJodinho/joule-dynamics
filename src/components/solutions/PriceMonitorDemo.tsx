@@ -29,7 +29,8 @@ interface SpreadRow {
 
 interface CategoryTrendRow {
   category: string;
-  day: string;
+  bucket: string;
+  products_reporting: number;
   category_index: number;
 }
 
@@ -59,6 +60,58 @@ interface AlertRow {
   acknowledged: boolean;
 }
 
+const CustomTrendTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-card border border-border rounded-md p-3 shadow-md z-50">
+        <p className="text-muted-foreground text-xs mb-2 font-medium">{label}</p>
+        {payload.map((entry: any, index: number) => {
+          const cat = entry.dataKey;
+          const reporting = entry.payload[`${cat}_reporting`] || 0;
+          const total = entry.payload[`${cat}_total`] || 0;
+          const isLowConfidence = total > 0 && reporting < total / 2;
+          
+          return (
+            <div key={index} className="flex flex-col mb-1.5 last:mb-0">
+              <div className="flex justify-between gap-4 items-center">
+                <span className="text-foreground text-xs font-medium" style={{ color: entry.color }}>
+                  {entry.name}:
+                </span>
+                <span className="font-bold text-xs">{Number(entry.value).toFixed(2)}</span>
+              </div>
+              {total > 0 && (
+                <span className={`text-[10px] ${isLowConfidence ? 'text-amber-500 font-medium' : 'text-muted-foreground/70'}`}>
+                  based on {reporting} of {total} products
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomConfidenceDot = (props: any) => {
+  const { cx, cy, stroke, payload, dataKey } = props;
+  if (cx == null || cy == null) return null;
+  
+  const cat = dataKey;
+  const reporting = payload[`${cat}_reporting`] || 0;
+  const total = payload[`${cat}_total`] || 0;
+  const isLowConfidence = total > 0 && reporting < total / 2;
+
+  if (isLowConfidence) {
+    return (
+      <circle cx={cx} cy={cy} r={4} fill="var(--color-card)" stroke={stroke} strokeWidth={2} opacity={0.6} strokeDasharray="2 2" />
+    );
+  }
+  return (
+    <circle cx={cx} cy={cy} r={3} fill={stroke} stroke="none" />
+  );
+};
+
 export default function PriceMonitorDemo() {
   const [spreadData, setSpreadData] = useState<SpreadRow[]>([]);
   const [trendData, setTrendData] = useState<CategoryTrendRow[]>([]);
@@ -73,7 +126,7 @@ export default function PriceMonitorDemo() {
     try {
       const [spreadRes, trendRes, volRes] = await Promise.all([
         supabase.from("v_price_spread_latest").select("*").order("spread_pct", { ascending: false }),
-        supabase.from("v_category_price_index").select("*").order("day", { ascending: true }),
+        supabase.from("v_category_price_index").select("*").order("bucket", { ascending: true }),
         supabase.from("v_price_volatility").select("*").order("created_at", { ascending: true })
       ]);
 
@@ -133,6 +186,16 @@ export default function PriceMonitorDemo() {
     };
   }, []);
 
+  // Calculate total tracked products per category from spreadData
+  const categoryTotals = useMemo(() => {
+    const totals: Record<string, number> = {};
+    spreadData.forEach(r => {
+      const cat = r.category || "Uncategorized";
+      totals[cat] = (totals[cat] || 0) + r.retailers_tracked;
+    });
+    return totals;
+  }, [spreadData]);
+
   if (loading || loadingAlerts) {
     return (
       <div className="flex w-full flex-col gap-6 bg-card p-6 text-sm animate-pulse min-h-[400px]">
@@ -166,17 +229,21 @@ export default function PriceMonitorDemo() {
   // Process Category Trend Data
   const categories = Array.from(new Set(trendData.map(d => d.category || "Uncategorized")));
   
-  // Pivot trendData: { day: '...', Electronics: 105, Home: 98 }
+  // Pivot trendData: { dayShort: '...', timestamp: 12345, Electronics: 105, Electronics_reporting: 5, Electronics_total: 10 }
   const trendPivotMap = new Map<string, any>();
   trendData.forEach(r => {
-    const dShort = new Date(r.day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const d = new Date(r.bucket);
+    const dShort = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     if (!trendPivotMap.has(dShort)) {
-      trendPivotMap.set(dShort, { dayShort: dShort });
+      trendPivotMap.set(dShort, { dayShort: dShort, timestamp: d.getTime() });
     }
     const cat = r.category || "Uncategorized";
-    trendPivotMap.get(dShort)[cat] = r.category_index;
+    const bucketObj = trendPivotMap.get(dShort);
+    bucketObj[cat] = r.category_index;
+    bucketObj[`${cat}_reporting`] = r.products_reporting;
+    bucketObj[`${cat}_total`] = categoryTotals[cat] || 0;
   });
-  const chartTrendData = Array.from(trendPivotMap.values());
+  const chartTrendData = Array.from(trendPivotMap.values()).sort((a, b) => a.timestamp - b.timestamp);
 
   const categoryColors = [
     "var(--color-primary)",
@@ -249,11 +316,7 @@ export default function PriceMonitorDemo() {
                   axisLine={false}
                   dx={-5}
                 />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", borderRadius: "6px", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
-                  itemStyle={{ color: "var(--color-foreground)", fontSize: "12px", fontWeight: 500 }}
-                  labelStyle={{ color: "var(--color-muted-foreground)", marginBottom: "4px", fontSize: "11px" }}
-                />
+                <Tooltip content={<CustomTrendTooltip />} />
                 {categories.map((cat, i) => (
                   <Line 
                     key={cat}
@@ -262,7 +325,7 @@ export default function PriceMonitorDemo() {
                     name={cat}
                     stroke={categoryColors[i % categoryColors.length]} 
                     strokeWidth={2} 
-                    dot={false}
+                    dot={<CustomConfidenceDot />}
                     activeDot={{ r: 5 }}
                   />
                 ))}
