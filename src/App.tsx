@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SystemStatusBar } from "@/components/layout/SystemStatusBar";
 import CredentialFooter from "@/components/layout/CredentialFooter";
@@ -9,6 +10,7 @@ import AuditPortal from "@/components/sections/AuditPortal";
 import AboutSection from "@/components/sections/AboutSection";
 import NotFound from "@/components/sections/NotFound";
 import LiveSystems from "@/pages/LiveSystems";
+import RealEstatePage from "@/pages/RealEstatePage";
 
 /**
  * Root page — single-page layout, section-only composition.
@@ -32,13 +34,35 @@ function PortfolioRoot() {
   );
 }
 
+function ScrollToHash() {
+  const { pathname, hash } = useLocation();
+
+  useEffect(() => {
+    if (hash) {
+      setTimeout(() => {
+        const id = hash.replace("#", "");
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 0);
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, hash]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="joule-ui-theme">
       <BrowserRouter>
+        <ScrollToHash />
         <div className="min-h-screen bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground">
           <Routes>
             <Route path="/" element={<PortfolioRoot />} />
+            <Route path="/real-estate" element={<RealEstatePage />} />
             <Route path="/live-systems" element={<LiveSystems />} />
             {/* /audit redirects to the inline contact section on the main page */}
             <Route path="/audit" element={<PortfolioRoot />} />

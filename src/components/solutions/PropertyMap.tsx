@@ -1,0 +1,237 @@
+/**
+ * PropertyMap.tsx
+ * Mapbox GL JS map showing all tracked properties.
+ * Data: v_rate_volatility (includes latitude/longitude after view update).
+ * Token: VITE_MAP_BOX_API_KEY env var.
+ * Pattern: useRef + useEffect (official Mapbox React pattern from skill).
+ */
+import { useRef, useEffect, useState } from "react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+import { supabase } from "@/lib/supabaseClient";
+import { MapPin } from "lucide-react";
+
+interface PropertyPoint {
+  property_id: string;
+  property_name: string;
+  url: string;
+  market: string;
+  platform: string;
+  latitude: number;
+  longitude: number;
+  nightly_rate: number | null;
+  is_available: boolean;
+  currency: string;
+  pct_above_trailing_avg: number | null;
+}
+
+interface PropertyMapProps {
+  totalProperties?: number;
+}
+
+export default function PropertyMap({ totalProperties }: PropertyMapProps) {
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
+
+  const [properties, setProperties] = useState<PropertyPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [mapReady, setMapReady] = useState(false);
+
+  // ── Fetch property data from v_rate_volatility ───────────────────────────
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("v_rate_volatility")
+          .select("property_id, property_name, url, market, platform, latitude, longitude, nightly_rate, is_available, currency, pct_above_trailing_avg")
+          .not("latitude", "is", null)
+          .not("longitude", "is", null)
+          .order("recorded_at", { ascending: false });
+
+        if (error) {
+          console.error("PropertyMap: error fetching data:", error);
+          return;
+        }
+
+        // Deduplicate to latest row per property
+        const seen = new Set<string>();
+        const unique: PropertyPoint[] = [];
+        for (const row of (data as unknown as PropertyPoint[])) {
+          if (!seen.has(row.property_id)) {
+            seen.add(row.property_id);
+            unique.push(row);
+          }
+        }
+        setProperties(unique);
+      } catch (e) {
+        console.error("PropertyMap: unexpected error:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void fetch();
+  }, []);
+
+  // ── Initialise Mapbox map ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    const token = import.meta.env.VITE_MAP_BOX_API_KEY as string | undefined;
+    if (!token) {
+      console.error("PropertyMap: VITE_MAP_BOX_API_KEY is not set");
+      return;
+    }
+
+    mapRef.current = new mapboxgl.Map({
+      accessToken: token,
+      container: mapContainerRef.current,
+      style: "mapbox://styles/mapbox/dark-v11",
+      center: [-74.006, 40.7128], // NYC default
+      zoom: 9,
+    });
+
+    mapRef.current.addControl(new mapboxgl.NavigationControl(), "top-right");
+
+    mapRef.current.on("load", () => {
+      setMapReady(true);
+    });
+
+    // CRITICAL: cleanup to prevent memory leaks (per Mapbox skill requirement)
+    return () => {
+      markersRef.current.forEach(m => m.remove());
+      markersRef.current = [];
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  // ── Add/update markers when properties or map is ready ───────────────────
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || properties.length === 0) return;
+
+    // Clear previous markers
+    markersRef.current.forEach(m => m.remove());
+    markersRef.current = [];
+
+    properties.forEach((prop) => {
+      const isSpike = prop.pct_above_trailing_avg !== null && prop.pct_above_trailing_avg >= 25;
+      const isUnavailable = !prop.is_available;
+
+      // Custom marker element
+      const el = document.createElement("div");
+      el.className = "property-map-marker";
+      el.style.cssText = `
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: 2px solid ${isSpike ? "#f59e0b" : isUnavailable ? "#6b7280" : "var(--color-primary, #f97316)"};
+        background: ${isSpike ? "rgba(245,158,11,0.15)" : isUnavailable ? "rgba(107,114,128,0.15)" : "rgba(249,115,22,0.15)"};
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        transition: transform 0.15s;
+      `;
+      el.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="${isSpike ? "#f59e0b" : isUnavailable ? "#6b7280" : "#f97316"}"><circle cx="12" cy="12" r="6"/></svg>`;
+      el.addEventListener("mouseenter", () => { el.style.transform = "scale(1.2)"; });
+      el.addEventListener("mouseleave", () => { el.style.transform = "scale(1)"; });
+
+      // Popup content
+      const rateStr = prop.nightly_rate != null
+        ? `${prop.currency === "USD" ? "$" : prop.currency}${prop.nightly_rate.toFixed(0)}/night`
+        : "Rate unavailable";
+      const pctStr = prop.pct_above_trailing_avg != null
+        ? `${prop.pct_above_trailing_avg > 0 ? "+" : ""}${prop.pct_above_trailing_avg.toFixed(1)}% vs 7d avg`
+        : "";
+
+      const popup = new mapboxgl.Popup({ offset: 16, closeButton: true, maxWidth: "260px" })
+        .setHTML(`
+          <div style="font-family:system-ui,sans-serif;font-size:12px;padding:4px 0;color:#e5e7eb">
+            <div style="font-weight:600;font-size:13px;margin-bottom:4px;color:#f9fafb">${prop.property_name}</div>
+            <div style="color:#9ca3af;margin-bottom:6px">${prop.market} · ${prop.platform}</div>
+            <div style="font-weight:700;font-size:14px;color:${isSpike ? "#f59e0b" : "#f9fafb"};margin-bottom:2px">${rateStr}</div>
+            ${pctStr ? `<div style="color:${isSpike ? "#fbbf24" : "#9ca3af"};font-size:11px;margin-bottom:4px">${pctStr}</div>` : ""}
+            <div style="color:${prop.is_available ? "#4ade80" : "#9ca3af"};font-size:11px">${prop.is_available ? "✓ Available" : "Unavailable"}</div>
+            ${prop.url ? `<a href="${prop.url}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:6px;color:#f97316;font-size:11px;text-decoration:none">View listing →</a>` : ""}
+          </div>
+        `);
+
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat([prop.longitude, prop.latitude])
+        .setPopup(popup)
+        .addTo(mapRef.current!);
+
+      markersRef.current.push(marker);
+    });
+
+    // Auto-fit bounds to all markers
+    if (properties.length > 1) {
+      const bounds = new mapboxgl.LngLatBounds();
+      properties.forEach(p => bounds.extend([p.longitude, p.latitude]));
+      mapRef.current.fitBounds(bounds, { padding: 60, maxZoom: 13, duration: 800 });
+    } else if (properties.length === 1) {
+      mapRef.current.flyTo({ center: [properties[0].longitude, properties[0].latitude], zoom: 12 });
+    }
+  }, [mapReady, properties]);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <MapPin className="size-4 text-primary" />
+        <h4 className="font-semibold text-foreground">Property Locations</h4>
+        {!loading && properties.length > 0 && (
+          <span className="text-xs text-muted-foreground ml-1">
+            {totalProperties && totalProperties > properties.length 
+              ? `${properties.length} of ${totalProperties} mapped — ${totalProperties - properties.length} missing location data`
+              : `${properties.length} tracked ${properties.length === 1 ? "property" : "properties"}`}
+          </span>
+        )}
+      </div>
+      <p className="text-[10px] text-muted-foreground -mt-1">
+        Geographic distribution of tracked inventory — colored by current availability and pricing anomalies.
+      </p>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-primary/80 border border-primary" />
+          Active
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500/30 border border-amber-500" />
+          Rate spike ≥ 25%
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-muted/40 border border-muted-foreground/40" />
+          Unavailable
+        </span>
+      </div>
+
+      <div className="relative w-full rounded-lg border border-border overflow-hidden">
+        {/* Loading skeleton */}
+        {loading && (
+          <div className="absolute inset-0 bg-muted/20 animate-pulse flex items-center justify-center z-10">
+            <span className="text-xs text-muted-foreground">Loading map…</span>
+          </div>
+        )}
+
+        {/* No coordinates message */}
+        {!loading && properties.length === 0 && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-card/80 gap-2">
+            <MapPin className="size-6 text-muted-foreground opacity-40" />
+            <p className="text-xs text-muted-foreground">No coordinate data yet — latitude/longitude will populate after the view update is run.</p>
+          </div>
+        )}
+
+        {/* Map container — always rendered so Mapbox can attach */}
+        <div
+          ref={mapContainerRef}
+          style={{ height: "380px", width: "100%" }}
+          className="bg-muted/10"
+        />
+      </div>
+    </div>
+  );
+}

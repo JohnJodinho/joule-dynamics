@@ -5,6 +5,7 @@
  */
 import config from "@/data/config.json";
 import type { LinkNode, RootConfig } from "@/types/data";
+import { Link } from "react-router-dom";
 
 const { links } = config as unknown as RootConfig;
 const LINKS = links as LinkNode[];
@@ -12,11 +13,29 @@ const LINKS = links as LinkNode[];
 /** Internal hrefs (starting with /) use a plain <a>, external get target="_blank" */
 function LinkItem({ link }: { link: LinkNode }) {
   const isInternal = link.href.startsWith("/");
+  
+  if (isInternal) {
+    return (
+      <Link
+        key={link.id}
+        to={link.href}
+        className="group inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase text-muted-foreground transition-colors duration-150 hover:text-accent"
+      >
+        <span
+          className="inline-block h-1 w-1 shrink-0 rounded-full bg-muted-foreground transition-colors duration-150 group-hover:bg-accent"
+          aria-hidden="true"
+        />
+        {link.label}
+      </Link>
+    );
+  }
+
   return (
     <a
       key={link.id}
       href={link.href}
-      {...(!isInternal && { target: "_blank", rel: "noopener noreferrer" })}
+      target="_blank"
+      rel="noopener noreferrer"
       className="group inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase text-muted-foreground transition-colors duration-150 hover:text-accent"
     >
       <span

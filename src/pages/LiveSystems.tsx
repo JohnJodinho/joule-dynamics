@@ -3,13 +3,12 @@ import { supabase } from "@/lib/supabaseClient";
 import PriceMonitorDemo from "@/components/solutions/PriceMonitorDemo";
 import LeadGeneratorDemo from "@/components/solutions/LeadGeneratorDemo";
 import ChatDemo from "@/components/solutions/ChatDemo";
-import RealEstateDemo from "@/components/solutions/RealEstateDemo";
 import ScrapeHealthStrip from "@/components/solutions/ScrapeHealthStrip";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { SystemStatusBar } from "@/components/layout/SystemStatusBar";
 import LiveSystemsNav from "@/components/layout/LiveSystemsNav";
 import CredentialFooter from "@/components/layout/CredentialFooter";
-import { Activity, Users, MessageSquare, Building2 } from "lucide-react";
+import { Activity, Users, MessageSquare, Building2, ExternalLink } from "lucide-react";
 
 interface KPIData {
   pricing: {
@@ -127,7 +126,7 @@ export default function LiveSystems() {
 
         <div className="w-full h-px bg-border/50" />
 
-        {/* ── 2. Real Estate Rate Monitor ── */}
+        {/* ── 2. Real Estate Rate Monitor — stub linking to /real-estate ── */}
         <section id="real-estate" className="scroll-mt-24">
           <div className="flex items-center gap-2 mb-6">
             <div className="p-2 bg-primary/10 rounded-md">
@@ -136,36 +135,26 @@ export default function LiveSystems() {
             <h2 className="text-2xl font-bold text-foreground">Real Estate Rate Monitor</h2>
           </div>
 
-          <ErrorBoundary fallbackMessage="Failed to load Real Estate KPIs.">
-            {loading || !kpis ? renderSkeletonKpis() : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <KPICard label="Properties Tracked" value={kpis.real_estate?.properties_tracked ?? '—'} />
-                <KPICard label="Rate Changes (7d)" value={kpis.real_estate?.rate_changes_7d ?? '—'} />
-                <KPICard label="25%+ Spikes (7d)" value={kpis.real_estate?.spikes_7d ?? '—'} />
-                <div className="flex flex-col p-4 bg-card border border-border rounded-lg shadow-sm">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Scrape Status</span>
-                  <div className="flex flex-col gap-1 mt-1">
-                    {kpis.real_estate?.last_scrape_status ? (
-                      Object.entries(kpis.real_estate.last_scrape_status).map(([platform, status]) => (
-                        <div key={platform} className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground capitalize">{platform}</span>
-                          <span className={`text-sm font-semibold ${statusColor(status)}`}>{status}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <span className="text-2xl font-semibold text-muted-foreground">Pending</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </ErrorBoundary>
-
-          <ErrorBoundary fallbackMessage="Failed to load Real Estate Dashboard.">
-            <div className="border border-border rounded-lg overflow-hidden bg-card/30">
-              <RealEstateDemo />
+          {/* Stub card — full dashboard lives at /real-estate */}
+          <div className="border border-border rounded-lg bg-card/30 p-8 flex flex-col items-center justify-center text-center gap-5 min-h-[200px]">
+            <div className="p-3 bg-primary/10 rounded-full">
+              <Building2 className="size-8 text-primary" />
             </div>
-          </ErrorBoundary>
+            <div className="flex flex-col gap-2">
+              <p className="font-semibold text-foreground text-lg">Real Estate Rate Monitor</p>
+              <p className="text-muted-foreground text-sm max-w-sm">
+                Live nightly rate tracking across short-term rental markets — spike detection,
+                competitor pricing, and availability signals, checked 4× daily.
+              </p>
+            </div>
+            <a
+              href="/real-estate"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              View Full Dashboard
+              <ExternalLink className="size-3.5" />
+            </a>
+          </div>
         </section>
 
         <div className="w-full h-px bg-border/50" />
