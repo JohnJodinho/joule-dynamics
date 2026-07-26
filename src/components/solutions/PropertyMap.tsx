@@ -118,25 +118,35 @@ export default function PropertyMap({ totalProperties }: PropertyMapProps) {
       const isSpike = prop.pct_above_trailing_avg !== null && prop.pct_above_trailing_avg >= 25;
       const isUnavailable = !prop.is_available;
 
-      // Custom marker element
       const el = document.createElement("div");
       el.className = "property-map-marker";
       el.style.cssText = `
         width: 28px;
         height: 28px;
-        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
+      `;
+
+      const inner = document.createElement("div");
+      inner.style.cssText = `
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         border: 2px solid ${isSpike ? "#f59e0b" : isUnavailable ? "#6b7280" : "var(--color-primary, #f97316)"};
         background: ${isSpike ? "rgba(245,158,11,0.15)" : isUnavailable ? "rgba(107,114,128,0.15)" : "rgba(249,115,22,0.15)"};
         box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-        transition: transform 0.15s;
+        transition: transform 0.15s ease-out;
       `;
-      el.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="${isSpike ? "#f59e0b" : isUnavailable ? "#6b7280" : "#f97316"}"><circle cx="12" cy="12" r="6"/></svg>`;
-      el.addEventListener("mouseenter", () => { el.style.transform = "scale(1.2)"; });
-      el.addEventListener("mouseleave", () => { el.style.transform = "scale(1)"; });
+      inner.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="${isSpike ? "#f59e0b" : isUnavailable ? "#6b7280" : "#f97316"}"><circle cx="12" cy="12" r="6"/></svg>`;
+      el.appendChild(inner);
+
+      el.addEventListener("mouseenter", () => { inner.style.transform = "scale(1.2)"; });
+      el.addEventListener("mouseleave", () => { inner.style.transform = "scale(1)"; });
 
       // Popup content
       const rateStr = prop.nightly_rate != null
