@@ -32,8 +32,8 @@ export default function ServiceTierSection() {
           <div className="flex flex-col gap-1.5">
             <p className="font-semibold text-foreground">Competitor Rate Watch</p>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Live tracking of your named competitors' pricing and availability. Know the moment
-              they move rates, so you can respond — not react.
+              You will know exactly how your competitors price and when
+              they move rates, empowering you to respond instead of reacting.
             </p>
           </div>
 
@@ -76,7 +76,7 @@ export default function ServiceTierSection() {
           </ul>
 
           <p className="text-xs text-muted-foreground border-t border-border/50 pt-3">
-            These are built to your market and use case — reach out to discuss what's possible.
+            Built to your market and use case. Reach out to discuss what's possible.
           </p>
 
           <a

@@ -184,13 +184,13 @@ export default function PropertyMap({ totalProperties }: PropertyMapProps) {
         {!loading && properties.length > 0 && (
           <span className="text-xs text-muted-foreground ml-1">
             {totalProperties && totalProperties > properties.length 
-              ? `${properties.length} of ${totalProperties} mapped — ${totalProperties - properties.length} missing location data`
+              ? `${properties.length} of ${totalProperties} mapped (${totalProperties - properties.length} missing location data)`
               : `${properties.length} tracked ${properties.length === 1 ? "property" : "properties"}`}
           </span>
         )}
       </div>
       <p className="text-[10px] text-muted-foreground -mt-1">
-        Geographic distribution of tracked inventory — colored by current availability and pricing anomalies.
+        Geographic distribution of tracked inventory colored by current availability and pricing anomalies.
       </p>
 
       {/* Legend */}
@@ -221,7 +221,7 @@ export default function PropertyMap({ totalProperties }: PropertyMapProps) {
         {!loading && properties.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-card/80 gap-2">
             <MapPin className="size-6 text-muted-foreground opacity-40" />
-            <p className="text-xs text-muted-foreground">No coordinate data yet — latitude/longitude will populate after the view update is run.</p>
+            <p className="text-xs text-muted-foreground">No coordinate data yet. Latitude and longitude will populate after the view update runs.</p>
           </div>
         )}
 

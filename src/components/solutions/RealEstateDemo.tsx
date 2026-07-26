@@ -27,7 +27,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { TrendingUp, ArrowRight, ExternalLink, Star, Bed } from "lucide-react";
+import { TrendingUp, ArrowRight, ExternalLink, Star, Bed, Info } from "lucide-react";
 
 interface RateRow {
   id: string;
@@ -177,12 +177,21 @@ export default function RealEstateDemo() {
   const chartData = useMemo(() => data
     .filter((r) => r.property_id === selectedPropertyId)
     .sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime())
-    .map((r) => ({
-      ...r,
-      dateShort: new Date(r.recorded_at).toLocaleDateString(undefined, {
-        month: "short", day: "numeric", hour: "numeric", minute: "2-digit"
-      }),
-    })), [data, selectedPropertyId]);
+    .map((r) => {
+      const d = new Date(r.recorded_at);
+      return {
+        ...r,
+        dateShort: d.toLocaleDateString(undefined, {
+          month: "short", day: "numeric", hour: "numeric", minute: "2-digit"
+        }),
+        dateOnly: d.toLocaleDateString(undefined, {
+          month: "short", day: "numeric"
+        }),
+        timeOnly: d.toLocaleTimeString(undefined, {
+          hour: "numeric", minute: "2-digit"
+        }),
+      };
+    }), [data, selectedPropertyId]);
 
   // Health indicator (Tier 3 #11)
   const totalProperties = uniqueProperties.length;
@@ -257,7 +266,7 @@ export default function RealEstateDemo() {
             <span className="text-muted-foreground font-normal text-xs">(≥ 25% above 7-day trailing avg)</span>
           </div>
           <p className="text-[10px] text-muted-foreground -mt-1">
-            Alerts trigger when a property's current rate deviates ≥ 25% from its own 7-day average — indicating a pricing surge or correction worth investigating.
+            Alerts trigger when a property's current rate deviates ≥ 25% from its own 7-day average, signaling a pricing surge or correction worth investigating.
           </p>
           <div className="flex flex-col gap-2">
             {spikes.map((spike) => (
@@ -305,7 +314,12 @@ export default function RealEstateDemo() {
       {/* ── Rate History Chart ── */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <h4 className="font-semibold text-foreground">Nightly Rate History</h4>
+          <div className="flex items-center gap-2">
+            <h4 className="font-semibold text-foreground">Nightly Rate History</h4>
+            <span className="text-[10px] text-muted-foreground sm:hidden flex items-center gap-1">
+              Swipe <ArrowRight className="size-3" />
+            </span>
+          </div>
           {uniqueProperties.length > 0 && (
             <select
               className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary max-w-[220px] truncate"
@@ -320,17 +334,32 @@ export default function RealEstateDemo() {
         </div>
 
         {chartData.length > 0 ? (
-          <div className="h-64 w-full border border-border/50 rounded-lg bg-card/50 p-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} opacity={0.5} />
-                <XAxis
-                  dataKey="dateShort"
-                  tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
-                  tickLine={false}
-                  axisLine={false}
-                  dy={5}
-                />
+          <div className="relative w-full border border-border/50 rounded-lg bg-card/50 overflow-hidden">
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent pointer-events-none sm:hidden z-10" />
+            <div className="w-full overflow-x-auto">
+              <div className="h-64 min-w-[600px] w-full p-4 pr-6">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} opacity={0.5} />
+                    <XAxis
+                      dataKey="dateShort"
+                      tick={(props: any) => {
+                        const { x, y, index } = props;
+                        const dataPoint = chartData[index];
+                        if (!dataPoint) return null;
+                        return (
+                          <g transform={`translate(${x},${y})`}>
+                            <text x={0} y={0} dy={10} textAnchor="middle" fill="var(--color-muted-foreground)" fontSize={10}>
+                              <tspan>{dataPoint.dateOnly}</tspan>
+                              <tspan className="hidden sm:inline">, {dataPoint.timeOnly}</tspan>
+                            </text>
+                          </g>
+                        );
+                      }}
+                      tickLine={false}
+                      axisLine={false}
+                      dy={5}
+                    />
                 <YAxis
                   domain={["auto", "auto"]}
                   tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
@@ -339,16 +368,22 @@ export default function RealEstateDemo() {
                   axisLine={false}
                   dx={-5}
                 />
-                <Tooltip
-                  contentStyle={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", borderRadius: "6px" }}
-                  itemStyle={{ fontSize: "12px" }}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  formatter={((value: unknown, name: unknown) => [
-                    value != null ? `$${Number(value).toFixed(0)}/night` : "N/A",
-                    name === "nightly_rate" ? "Nightly Rate" : "7-day Trailing Avg",
-                  ]) as any}
-                  labelStyle={{ color: "var(--color-muted-foreground)", fontSize: "11px" }}
-                />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "var(--color-card)", borderColor: "var(--color-border)", borderRadius: "6px" }}
+                      itemStyle={{ fontSize: "12px" }}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      formatter={((value: unknown, name: unknown) => [
+                        value != null ? `$${Number(value).toFixed(0)}/night` : "N/A",
+                        name === "nightly_rate" ? "Nightly Rate" : "7-day Trailing Avg",
+                      ]) as any}
+                      labelFormatter={(label, payload) => {
+                        if (payload && payload.length && payload[0].payload) {
+                          return payload[0].payload.dateShort;
+                        }
+                        return label;
+                      }}
+                      labelStyle={{ color: "var(--color-muted-foreground)", fontSize: "11px" }}
+                    />
                 <Legend
                   iconType="line"
                   wrapperStyle={{ fontSize: "10px", color: "var(--color-muted-foreground)" }}
@@ -370,8 +405,10 @@ export default function RealEstateDemo() {
                   strokeDasharray="4 4"
                   dot={false}
                 />
-              </LineChart>
-            </ResponsiveContainer>
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="h-64 w-full border border-border/50 rounded-lg bg-card/50 p-4 flex items-center justify-center">
@@ -412,6 +449,7 @@ export default function RealEstateDemo() {
           </div>
           <p className="text-[10px] text-muted-foreground">
             Latest recorded prices and availability against each property's 7-day trailing average benchmark.
+            Rates and availability reflect a live 2-night check-in window starting each day, refreshed 4× daily. This is not full-calendar occupancy.
           </p>
         </div>
 
@@ -504,8 +542,11 @@ export default function RealEstateDemo() {
                       const lastKnown = recentPriced[recentPriced.length - 1];
                       rateDisplay = (
                         <span className="flex flex-col gap-0.5">
-                          <span className={`font-medium ${isStale ? "text-amber-500/80" : "text-muted-foreground"}`}>
+                          <span className={`font-medium flex items-center gap-1 ${isStale ? "text-amber-500/80" : "text-muted-foreground"}`}>
                             {isStale ? "Stale" : "Unavailable"}
+                            <span title="Reflects a 2-night stay starting today rather than the property's full calendar. Other dates may still be bookable.">
+                              <Info className="size-3 opacity-60 cursor-help" />
+                            </span>
                           </span>
                           {lastKnown && (
                             <span className="flex items-center gap-1.5">

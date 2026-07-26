@@ -92,7 +92,7 @@ export default function RealEstatePage() {
           <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
             Live nightly rate intelligence across short-term rental markets.
             Tracks competitor pricing, detects rate spikes, and surfaces booking
-            availability in real time — checking each listing up to 4× daily.
+            availability in real time by checking each listing up to 4× daily.
           </p>
         </div>
 
