@@ -159,9 +159,9 @@ export default function PropertyMap({ totalProperties }: PropertyMapProps) {
       const popup = new mapboxgl.Popup({ offset: 16, closeButton: true, maxWidth: "260px" })
         .setHTML(`
           <div style="font-family:system-ui,sans-serif;font-size:12px;padding:4px 0;color:#e5e7eb">
-            <div style="font-weight:600;font-size:13px;margin-bottom:4px;color:#f9fafb">${prop.property_name}</div>
+            <div style="font-weight:600;font-size:13px;margin-bottom:4px;color:#9ca3af">${prop.property_name}</div>
             <div style="color:#9ca3af;margin-bottom:6px">${prop.market} · ${prop.platform}</div>
-            <div style="font-weight:700;font-size:14px;color:${isSpike ? "#f59e0b" : "#f9fafb"};margin-bottom:2px">${rateStr}</div>
+            <div style="font-weight:700;font-size:14px;color:${isSpike ? "#f59e0b" : "#9ca3af"};margin-bottom:2px">${rateStr}</div>
             ${pctStr ? `<div style="color:${isSpike ? "#fbbf24" : "#9ca3af"};font-size:11px;margin-bottom:4px">${pctStr}</div>` : ""}
             <div style="color:${prop.is_available ? "#4ade80" : "#9ca3af"};font-size:11px">${prop.is_available ? "✓ Available" : "Unavailable"}</div>
             ${prop.url ? `<a href="${prop.url}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:6px;color:#f97316;font-size:11px;text-decoration:none">View listing →</a>` : ""}
