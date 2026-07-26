@@ -73,6 +73,24 @@ export default function ServiceTierSection() {
                 Identifying long-term rentals with strong short-term rental upside.
               </span>
             </li>
+            <li className="flex flex-col gap-0.5">
+              <span className="font-medium text-foreground">Comparable Market Analysis (CMA) Automation</span>
+              <span className="text-muted-foreground text-xs leading-relaxed">
+                Automated comps pulled from tracked listings to support pricing and valuation decisions.
+              </span>
+            </li>
+            <li className="flex flex-col gap-0.5">
+              <span className="font-medium text-foreground">Off-Market Deal Sourcing</span>
+              <span className="text-muted-foreground text-xs leading-relaxed">
+                Flagging listings with distress signals (repeated price drops, extended time-on-market) for investors seeking deals.
+              </span>
+            </li>
+            <li className="flex flex-col gap-0.5">
+              <span className="font-medium text-foreground">Portfolio Performance Dashboards</span>
+              <span className="text-muted-foreground text-xs leading-relaxed">
+                A consolidated view across a property manager's full portfolio instead of one listing at a time.
+              </span>
+            </li>
           </ul>
 
           <p className="text-xs text-muted-foreground border-t border-border/50 pt-3">

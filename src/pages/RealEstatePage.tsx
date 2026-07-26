@@ -93,6 +93,7 @@ export default function RealEstatePage() {
             Live nightly rate intelligence across short-term rental markets.
             Tracks competitor pricing, detects rate spikes, and surfaces booking
             availability in real time by checking each listing up to 4× daily.
+            Built to track NYC/Miami rate dynamics around the 2026 World Cup Final. Expanding to new markets is a config change, not a rebuild.
           </p>
         </div>
 

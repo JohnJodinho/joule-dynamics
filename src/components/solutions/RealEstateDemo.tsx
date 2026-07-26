@@ -167,8 +167,8 @@ export default function RealEstateDemo() {
   const spikes = useMemo(() => Array.from(
     new Map(
       data
-        .filter((r) => r.pct_above_trailing_avg !== null && r.pct_above_trailing_avg >= 25)
-        .sort((a, b) => (b.pct_above_trailing_avg ?? 0) - (a.pct_above_trailing_avg ?? 0))
+        .filter((r) => r.pct_above_trailing_avg !== null && Math.abs(r.pct_above_trailing_avg) >= 25)
+        .sort((a, b) => Math.abs(b.pct_above_trailing_avg ?? 0) - Math.abs(a.pct_above_trailing_avg ?? 0))
         .map((r) => [r.property_id, r])
     ).values()
   ).slice(0, 4), [data]);
@@ -263,7 +263,7 @@ export default function RealEstateDemo() {
           <div className="flex items-center gap-2">
             <TrendingUp className="size-4 text-amber-500" />
             <h4 className="font-semibold text-foreground">Rate Spike Alerts</h4>
-            <span className="text-muted-foreground font-normal text-xs">(≥ 25% above 7-day trailing avg)</span>
+            <span className="text-muted-foreground font-normal text-xs">(≥ 25% deviation from 7-day trailing avg)</span>
           </div>
           <p className="text-[10px] text-muted-foreground -mt-1">
             Alerts trigger when a property's current rate deviates ≥ 25% from its own 7-day average, signaling a pricing surge or correction worth investigating.
@@ -302,7 +302,7 @@ export default function RealEstateDemo() {
                     <span className="text-[10px] font-normal text-muted-foreground ml-1">/ night</span>
                   </span>
                   <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-amber-500/40 text-amber-400 font-mono">
-                    +{spike.pct_above_trailing_avg?.toFixed(1)}% vs avg
+                    {spike.pct_above_trailing_avg && spike.pct_above_trailing_avg > 0 ? "+" : ""}{spike.pct_above_trailing_avg?.toFixed(1)}% vs avg
                   </Badge>
                 </div>
               </div>
@@ -595,7 +595,7 @@ export default function RealEstateDemo() {
                                 {row.bedrooms}
                               </span>
                             )}
-                            {row.avg_rating != null && (
+                            {row.avg_rating != null && row.review_count !== 0 && (
                               <span className="flex items-center gap-1">
                                 <Star className="size-3 opacity-60" />
                                 {row.avg_rating.toFixed(1)}
