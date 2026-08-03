@@ -86,7 +86,8 @@ export default function RealEstatePage() {
 
         {/* Header */}
         <div className="max-w-3xl pt-4">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl flex items-center gap-3">
+            <img src="/joule-dynamics.svg" alt="" className="h-7 w-auto shrink-0" aria-hidden="true" />
             Real Estate Rate Monitor
           </h1>
           <p className="mt-4 text-lg text-muted-foreground leading-relaxed">

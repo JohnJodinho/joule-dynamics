@@ -6,6 +6,7 @@
 import config from "@/data/config.json";
 import type { LinkNode, RootConfig } from "@/types/data";
 import { Link } from "react-router-dom";
+import { Mail } from "lucide-react";
 
 const { links } = config as unknown as RootConfig;
 const LINKS = links as LinkNode[];
@@ -13,6 +14,7 @@ const LINKS = links as LinkNode[];
 /** Internal hrefs (starting with /) use a plain <a>, external get target="_blank" */
 function LinkItem({ link }: { link: LinkNode }) {
   const isInternal = link.href.startsWith("/");
+  const isMailto = link.href.startsWith("mailto:");
   
   if (isInternal) {
     return (
@@ -34,8 +36,8 @@ function LinkItem({ link }: { link: LinkNode }) {
     <a
       key={link.id}
       href={link.href}
-      target="_blank"
-      rel="noopener noreferrer"
+      target={isMailto ? undefined : "_blank"}
+      rel={isMailto ? undefined : "noopener noreferrer"}
       className="group inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase text-muted-foreground transition-colors duration-150 hover:text-accent"
     >
       <span
@@ -54,12 +56,26 @@ export default function CredentialFooter() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
 
           {/* ── Column 1: Brand Lock ── */}
-          <div className="flex flex-col gap-1">
-            <p className="text-sm font-bold tracking-widest text-foreground uppercase font-mono">
-              Joule Dynamics © 2026
-            </p>
+          <div className="flex flex-col gap-3">
+            <a href="/" className="inline-block">
+              <img
+                src="/horizontal-lockup.svg"
+                alt="Joule Dynamics"
+                className="h-5 w-auto dark:brightness-100 brightness-0"
+              />
+            </a>
             <p className="text-sm text-muted-foreground font-mono">
               Built on Industrial Logic.
+            </p>
+            <a
+              href="mailto:john@jouledynamics.me"
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-mono"
+            >
+              <Mail className="size-3" />
+              john@jouledynamics.me
+            </a>
+            <p className="text-[10px] text-muted-foreground/60 font-mono">
+              © 2026 Joule Dynamics
             </p>
           </div>
 

@@ -315,6 +315,11 @@
       "id": "linkedin",
       "label": "VERIFY_PROFILE // LINKEDIN",
       "href": "https://www.linkedin.com/in/john-albarka-ibrahim/"
+    },
+    {
+      "id": "email",
+      "label": "CONTACT // EMAIL",
+      "href": "mailto:john@jouledynamics.me"
     }
   ]
 }

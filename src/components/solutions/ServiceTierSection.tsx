@@ -6,7 +6,8 @@
  *   - "Available Now": solid/accent card — live, working feature
  *   - "Custom builds": outlined/muted card — not yet available
  */
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, MessageCircle, Mail } from "lucide-react";
+import ContactModal from "@/components/ui/ContactModal";
 
 export default function ServiceTierSection() {
   return (
@@ -97,15 +98,30 @@ export default function ServiceTierSection() {
             Built to your market and use case. Reach out to discuss what's possible.
           </p>
 
-          <a
-            href="https://wa.me/2348101344101?text=Hi%20John%2C%20I%27d%20like%20to%20discuss%20a%20custom%20build%20for%20Real%20Estate%20Intelligence."
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors self-start"
-          >
-            Get in touch
-            <ExternalLink className="size-3" />
-          </a>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="https://wa.me/2348101344101?text=Hi%20John%2C%20I%27d%20like%20to%20discuss%20a%20custom%20build%20for%20Real%20Estate%20Intelligence."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+            >
+              <MessageCircle className="size-3" />
+              Chat on WhatsApp
+              <ExternalLink className="size-2.5 opacity-60" />
+            </a>
+
+            <ContactModal
+              trigger={(open) => (
+                <button
+                  onClick={open}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                >
+                  <Mail className="size-3" />
+                  Email Us
+                </button>
+              )}
+            />
+          </div>
         </div>
 
       </div>
