@@ -15,7 +15,7 @@
  *  - Overall health indicator instead of per-row stale exposure (Tier 3 #11)
  */
 import React, { useState, useEffect, useMemo } from "react";
-import { supabase } from "@/lib/supabaseClient";
+
 import { Badge } from "@/components/ui/badge";
 import {
   LineChart,
@@ -80,59 +80,40 @@ function Sparkline({ prices }: { prices: number[] }) {
   );
 }
 
-export default function RealEstateDemo() {
-  const [data, setData] = useState<RateRow[]>([]);
-  const [loading, setLoading] = useState(true);
+export interface RealEstateDemoProps {
+  data: RateRow[];
+  loading: boolean;
+  filters: {
+    platform: string;
+    tracked: string;
+    bedrooms: string;
+    startDate: string | null;
+    endDate: string | null;
+    market?: string;
+  };
+  onFilterChange: (key: string, value: string | null) => void;
+}
+
+export default function RealEstateDemo({ data, loading, filters, onFilterChange }: RealEstateDemoProps) {
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
 
-  // Filters (Tier 3)
-  const [filterMarket, setFilterMarket] = useState<string>("all");
-  const [filterPlatform, setFilterPlatform] = useState<string>("all");
-  const [filterBedrooms, setFilterBedrooms] = useState<string>("all");
-
-  const fetchData = async () => {
-    try {
-      const { data: rows, error } = await supabase
-        .from("v_rate_volatility")
-        .select("*")
-        .order("stay_date", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching rate volatility:", error);
-      } else {
-        const typed = (rows as unknown as RateRow[]) || [];
-        setData(typed);
-        if (typed.length > 0 && !selectedPropertyId) {
-          const nycProps = typed.filter(
-            (r) => r.market && (r.market.toLowerCase().includes("nyc") || r.market.toLowerCase().includes("nj"))
-          );
-          const targetPool = nycProps.length > 0 ? nycProps : typed;
-          const mostVolatile = targetPool.reduce((prev, curr) => {
-            const prevVal = Math.abs(prev.pct_above_trailing_avg ?? 0);
-            const currVal = Math.abs(curr.pct_above_trailing_avg ?? 0);
-            return currVal > prevVal ? curr : prev;
-          }, targetPool[0]);
-          setSelectedPropertyId(mostVolatile.property_id);
-        }
-      }
-    } catch (err) {
-      console.error("Unexpected error fetching rate data:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Initialize selected property
   useEffect(() => {
-    void fetchData();
-    const channel = supabase
-      .channel("public:rate_history")
-      .on("postgres_changes", { event: "*", schema: "public", table: "rate_history" }, () => {
-        void fetchData();
-      })
-      .subscribe();
-    return () => { void supabase.removeChannel(channel); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (data.length > 0 && !selectedPropertyId) {
+      const nycProps = data.filter(
+        (r) => r.market && (r.market.toLowerCase().includes("nyc") || r.market.toLowerCase().includes("nj"))
+      );
+      const targetPool = nycProps.length > 0 ? nycProps : data;
+      const mostVolatile = targetPool.reduce((prev, curr) => {
+        const prevVal = Math.abs(prev.pct_above_trailing_avg ?? 0);
+        const currVal = Math.abs(curr.pct_above_trailing_avg ?? 0);
+        return currVal > prevVal ? curr : prev;
+      }, targetPool[0]);
+      if (mostVolatile) setSelectedPropertyId(mostVolatile.property_id);
+    }
+  }, [data, selectedPropertyId]);
+
+
 
   // ── Derived state ────────────────────────────────────────────────────────────
 
@@ -153,25 +134,38 @@ export default function RealEstateDemo() {
 
   // Filtered latest rows per property
   const filteredProperties = useMemo(() => uniqueProperties.filter(p => {
-    if (filterMarket !== "all" && p.market !== filterMarket) return false;
-    if (filterPlatform !== "all" && p.platform !== filterPlatform) return false;
-    if (filterBedrooms !== "all" && String(p.bedrooms) !== filterBedrooms) return false;
+    if (filters.market && filters.market !== "all" && p.market !== filters.market) return false;
+    // Data passed as props is ALREADY filtered globally. We shouldn't double-filter here, 
+    // but the dropdowns in this component are replaced by the global filters logic.
     return true;
-  }), [uniqueProperties, filterMarket, filterPlatform, filterBedrooms]);
+  }), [uniqueProperties, filters.market]);
 
   const latestPerProperty = useMemo(() =>
     filteredProperties.map((p) => data.find((r) => r.property_id === p.id)!).filter(Boolean),
   [filteredProperties, data]);
 
-  // Spike alerts (unfiltered — show all properties)
-  const spikes = useMemo(() => Array.from(
-    new Map(
-      data
-        .filter((r) => r.pct_above_trailing_avg !== null && Math.abs(r.pct_above_trailing_avg) >= 25)
-        .sort((a, b) => Math.abs(b.pct_above_trailing_avg ?? 0) - Math.abs(a.pct_above_trailing_avg ?? 0))
-        .map((r) => [r.property_id, r])
-    ).values()
-  ).slice(0, 4), [data]);
+  // Volatility alerts (unfiltered — show all properties)
+  const spikes = useMemo(() => {
+    const allSignificant = data.filter((r) => r.pct_above_trailing_avg !== null && Math.abs(r.pct_above_trailing_avg) >= 25);
+    
+    const surgesAll = allSignificant.filter(r => r.pct_above_trailing_avg! > 0);
+    const dropsAll = allSignificant.filter(r => r.pct_above_trailing_avg! < 0);
+
+    const allSurges = Array.from(new Map(surgesAll.sort((a, b) => (b.pct_above_trailing_avg ?? 0) - (a.pct_above_trailing_avg ?? 0)).map(r => [r.property_id, r])).values());
+    const allDrops = Array.from(new Map(dropsAll.sort((a, b) => (a.pct_above_trailing_avg ?? 0) - (b.pct_above_trailing_avg ?? 0)).map(r => [r.property_id, r])).values());
+    
+    const finalSpikes = [];
+    let sIdx = 0, dIdx = 0;
+    // Take up to 2 of each to ensure balance
+    while(sIdx < 2 && sIdx < allSurges.length) finalSpikes.push(allSurges[sIdx++]);
+    while(dIdx < 2 && dIdx < allDrops.length) finalSpikes.push(allDrops[dIdx++]);
+    
+    // Fill remaining slots up to 4
+    while(finalSpikes.length < 4 && sIdx < allSurges.length) finalSpikes.push(allSurges[sIdx++]);
+    while(finalSpikes.length < 4 && dIdx < allDrops.length) finalSpikes.push(allDrops[dIdx++]);
+    
+    return finalSpikes;
+  }, [data]);
 
   // Chart data for selected property
   const chartData = useMemo(() => data
@@ -257,56 +251,65 @@ export default function RealEstateDemo() {
         </div>
       </div>
 
-      {/* ── Spike Alert Panel ── */}
+      {/* ── Volatility Alert Panel ── */}
       {spikes.length > 0 && (
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
             <TrendingUp className="size-4 text-amber-500" />
-            <h4 className="font-semibold text-foreground">Rate Spike Alerts</h4>
-            <span className="text-muted-foreground font-normal text-xs">(≥ 25% deviation from 7-day trailing avg)</span>
+            <h4 className="font-semibold text-foreground">Rate Volatility Alerts</h4>
+            <span className="text-muted-foreground font-normal text-xs">(≥ 25% deviation from 7-day avg)</span>
           </div>
           <p className="text-[10px] text-muted-foreground -mt-1">
-            Alerts trigger when a property's current rate deviates ≥ 25% from its own 7-day average, signaling a pricing surge or correction worth investigating.
+            Alerts trigger when a property's current rate deviates ≥ 25% from its 7-day average. This signals a pricing surge or correction worth investigating.
           </p>
           <div className="flex flex-col gap-2">
-            {spikes.map((spike) => (
-              <div
-                key={spike.property_id}
-                className="flex items-start justify-between rounded-md border border-amber-500/30 bg-amber-500/5 p-3 border-l-2 border-l-amber-500"
-              >
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-medium text-foreground text-sm flex items-center gap-1.5">
-                    <span className="truncate max-w-[180px] sm:max-w-xs" title={spike.property_name}>{spike.property_name}</span>
-                    {spike.url && (
-                      <a
-                        href={spike.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-muted-foreground hover:text-primary transition-colors shrink-0"
-                        title="View listing"
-                      >
-                        <ExternalLink className="size-3" />
-                      </a>
-                    )}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {spike.market} · {spike.platform}
-                    <span className="mx-1 opacity-40">·</span>
-                    Stay: {new Date(spike.stay_date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
-                  </span>
+            {spikes.map((spike) => {
+              const isDrop = spike.pct_above_trailing_avg !== null && spike.pct_above_trailing_avg < 0;
+              const borderColor = isDrop ? "border-green-500/30" : "border-amber-500/30";
+              const leftBorderColor = isDrop ? "border-l-green-500" : "border-l-amber-500";
+              const bgColor = isDrop ? "bg-green-500/5" : "bg-amber-500/5";
+              const textColor = isDrop ? "text-green-500" : "text-amber-400";
+              const badgeBorderColor = isDrop ? "border-green-500/40" : "border-amber-500/40";
+              
+              return (
+                <div
+                  key={spike.property_id}
+                  className={`flex items-start justify-between rounded-md border ${borderColor} ${bgColor} p-3 border-l-2 ${leftBorderColor}`}
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-medium text-foreground text-sm flex items-center gap-1.5">
+                      <span className="truncate max-w-[180px] sm:max-w-xs" title={spike.property_name}>{spike.property_name}</span>
+                      {spike.url && (
+                        <a
+                          href={spike.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-muted-foreground hover:text-primary transition-colors shrink-0"
+                          title="View listing"
+                        >
+                          <ExternalLink className="size-3" />
+                        </a>
+                      )}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {spike.market} · {spike.platform}
+                      <span className="mx-1 opacity-40">·</span>
+                      Stay: {new Date(spike.stay_date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end gap-0.5 shrink-0">
+                    <span className={`font-bold ${textColor} text-sm`}>
+                      {spike.currency === "USD" ? "$" : spike.currency}{spike.nightly_rate?.toFixed(0) ?? "N/A"}
+                      <span className="text-[10px] font-normal text-muted-foreground ml-1">/ night</span>
+                    </span>
+                    <Badge variant="outline" className={`text-[9px] px-1.5 py-0 ${badgeBorderColor} ${textColor} font-mono`}>
+                      {spike.pct_above_trailing_avg && spike.pct_above_trailing_avg > 0 ? "+" : ""}{spike.pct_above_trailing_avg?.toFixed(1)}% vs avg
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex flex-col items-end gap-0.5 shrink-0">
-                  <span className="font-bold text-amber-400 text-sm">
-                    {spike.currency === "USD" ? "$" : spike.currency}{spike.nightly_rate?.toFixed(0) ?? "N/A"}
-                    <span className="text-[10px] font-normal text-muted-foreground ml-1">/ night</span>
-                  </span>
-                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-amber-500/40 text-amber-400 font-mono">
-                    {spike.pct_above_trailing_avg && spike.pct_above_trailing_avg > 0 ? "+" : ""}{spike.pct_above_trailing_avg?.toFixed(1)}% vs avg
-                  </Badge>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -448,8 +451,8 @@ export default function RealEstateDemo() {
             </span>
           </div>
           <p className="text-[10px] text-muted-foreground">
-            Latest recorded prices and availability against each property's 7-day trailing average benchmark.
-            Rates and availability reflect a live 2-night check-in window starting each day, refreshed 4× daily. This is not full-calendar occupancy.
+            Latest recorded prices and availability compared to a property's 7-day trailing average benchmark.
+            Rates and availability reflect a live 2-night check-in window starting each day and are refreshed 4× daily. This does not represent full-calendar occupancy.
           </p>
         </div>
 
@@ -458,8 +461,8 @@ export default function RealEstateDemo() {
           {markets.length > 1 && (
             <select
               className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              value={filterMarket}
-              onChange={e => setFilterMarket(e.target.value)}
+              value={filters.market || "all"}
+              onChange={e => onFilterChange("market", e.target.value)}
             >
               <option value="all">All Markets</option>
               {markets.map(m => <option key={m} value={m}>{m}</option>)}
@@ -468,8 +471,8 @@ export default function RealEstateDemo() {
           {platforms.length > 1 && (
             <select
               className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              value={filterPlatform}
-              onChange={e => setFilterPlatform(e.target.value)}
+              value={filters.platform}
+              onChange={e => onFilterChange("platform", e.target.value)}
             >
               <option value="all">All Platforms</option>
               {platforms.map(p => <option key={p} value={p}>{p}</option>)}
@@ -478,17 +481,50 @@ export default function RealEstateDemo() {
           {bedroomOptions.length > 1 && (
             <select
               className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              value={filterBedrooms}
-              onChange={e => setFilterBedrooms(e.target.value)}
+              value={filters.bedrooms}
+              onChange={e => onFilterChange("bedrooms", e.target.value)}
             >
               <option value="all">All Bedrooms</option>
               {bedroomOptions.map(b => <option key={b} value={String(b)}>{b} BR</option>)}
             </select>
           )}
-          {(filterMarket !== "all" || filterPlatform !== "all" || filterBedrooms !== "all") && (
+          
+          {/* New Tracked and Date Filters */}
+          <select
+            className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            value={filters.tracked}
+            onChange={e => onFilterChange("tracked", e.target.value)}
+          >
+            <option value="tracked">Currently Tracked</option>
+            <option value="untracked">Untracked/Removed</option>
+            <option value="all">All Historical</option>
+          </select>
+          <input 
+            type="date"
+            className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            value={filters.startDate || ""}
+            onChange={e => onFilterChange("start", e.target.value || null)}
+            title="Start Date"
+          />
+          <input 
+            type="date"
+            className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            value={filters.endDate || ""}
+            onChange={e => onFilterChange("end", e.target.value || null)}
+            title="End Date"
+          />
+
+          {(filters.market !== "all" || filters.platform !== "all" || filters.bedrooms !== "all" || filters.tracked !== "tracked" || filters.startDate || filters.endDate) && (
             <button
               className="text-[10px] text-muted-foreground hover:text-foreground transition-colors border border-border rounded-md px-2 py-1"
-              onClick={() => { setFilterMarket("all"); setFilterPlatform("all"); setFilterBedrooms("all"); }}
+              onClick={() => {
+                onFilterChange("market", "all");
+                onFilterChange("platform", "all");
+                onFilterChange("bedrooms", "all");
+                onFilterChange("tracked", "tracked");
+                onFilterChange("start", null);
+                onFilterChange("end", null);
+              }}
             >
               Clear filters
             </button>
@@ -613,13 +649,13 @@ export default function RealEstateDemo() {
                           {pct !== null ? `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%` : "—"}
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`font-mono text-[10px] ${row.is_available ? "text-green-500" : "text-muted-foreground"}`}>
-                            {row.is_available ? "YES" : "NO"}
+                          <span className={`font-mono text-[10px] ${row.is_available ? (isStale ? "text-green-500/50" : "text-green-500") : "text-muted-foreground"}`}>
+                            {row.is_available ? (isStale ? "YES (STALE)" : "YES") : "NO"}
                           </span>
                         </td>
                         {/* Last checked (Tier 2 #7) */}
                         <td className="px-4 py-3 text-muted-foreground" title={new Date(row.recorded_at).toLocaleString()}>
-                          {timeAgo(row.recorded_at)}
+                          {isStale ? `As of ${new Date(row.recorded_at).toLocaleDateString(undefined, {month: "short", day: "numeric"})}` : timeAgo(row.recorded_at)}
                         </td>
                       </tr>
                     );
@@ -632,7 +668,7 @@ export default function RealEstateDemo() {
           <div className="flex h-32 w-full flex-col items-center justify-center rounded-md border border-border bg-card/50">
             <span className="text-xl opacity-40 mb-2">🏠</span>
             <p className="text-sm font-medium text-foreground">
-              {latestPerProperty.length === 0 && (filterMarket !== "all" || filterPlatform !== "all" || filterBedrooms !== "all")
+              {latestPerProperty.length === 0 && (filters.market !== "all" || filters.platform !== "all" || filters.bedrooms !== "all")
                 ? "No properties match the current filters."
                 : "No property data yet."}
             </p>

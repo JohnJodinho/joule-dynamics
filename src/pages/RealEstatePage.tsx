@@ -4,7 +4,8 @@
  * Includes KPI cards (from get_dashboard_kpis RPC), RealEstateDemo widget,
  * PropertyMap (Mapbox), and the Service Tier section.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { SystemStatusBar } from "@/components/layout/SystemStatusBar";
 import CredentialFooter from "@/components/layout/CredentialFooter";
@@ -24,27 +25,92 @@ interface RealEstateKPIs {
 }
 
 export default function RealEstatePage() {
-  const [kpis, setKpis] = useState<RealEstateKPIs | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filterPlatform = searchParams.get("platform") || "all";
+  const filterTracked = searchParams.get("tracked") || "tracked";
+  const filterStartDate = searchParams.get("start");
+  const filterEndDate = searchParams.get("end");
+  const filterBedrooms = searchParams.get("bedrooms") || "all";
+
+  const setFilter = (key: string, value: string | null) => {
+    setSearchParams(prev => {
+      if (value === null || value === "all" && key !== "tracked" && key !== "start" && key !== "end") {
+        prev.delete(key);
+      } else {
+        prev.set(key, value);
+      }
+      return prev;
+    });
+  };
+
+  const [baseKpis, setBaseKpis] = useState<RealEstateKPIs | null>(null);
+  const [rawData, setRawData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchKpis = async () => {
+    const fetchData = async () => {
       try {
-        const { data, error } = await supabase.rpc("get_dashboard_kpis");
-        if (error) {
-          console.error("Error fetching KPIs:", error);
-        } else if (data) {
-          const d = data as Record<string, unknown>;
-          setKpis((d.real_estate as RealEstateKPIs) ?? null);
+        const [kpiRes, dataRes] = await Promise.all([
+          supabase.rpc("get_dashboard_kpis"),
+          supabase
+            .from("v_rate_volatility")
+            .select("*")
+            .order("stay_date", { ascending: false })
+        ]);
+
+        if (kpiRes.data) {
+          const d = kpiRes.data as Record<string, unknown>;
+          setBaseKpis((d.real_estate as RealEstateKPIs) ?? null);
+        }
+        
+        if (dataRes.data) {
+          setRawData(dataRes.data);
         }
       } catch (e) {
-        console.error("Unexpected error fetching KPIs:", e);
+        console.error("Unexpected error fetching data:", e);
       } finally {
         setLoading(false);
       }
     };
-    void fetchKpis();
+    void fetchData();
   }, []);
+
+  // Filter data
+  const filteredData = useMemo(() => {
+    return rawData.filter((r) => {
+      if (filterPlatform !== "all" && r.platform !== filterPlatform) return false;
+      if (filterTracked === "tracked" && r.is_active === false) return false;
+      if (filterTracked === "untracked" && r.is_active === true) return false;
+      if (filterBedrooms !== "all" && String(r.bedrooms) !== filterBedrooms) return false;
+      
+      if (filterStartDate || filterEndDate) {
+        const stay = new Date(r.stay_date).getTime();
+        if (filterStartDate && stay < new Date(filterStartDate).getTime()) return false;
+        if (filterEndDate && stay > new Date(filterEndDate).getTime()) return false;
+      }
+      return true;
+    });
+  }, [rawData, filterPlatform, filterTracked, filterStartDate, filterEndDate, filterBedrooms]);
+
+  // Derive KPIs from filtered data
+  const kpis = useMemo(() => {
+    if (!baseKpis) return null;
+    const uniqueProps = new Set(filteredData.map(d => d.property_id)).size;
+    
+    // Spikes logic matches RPC (abs(pct) >= 25, recorded_at in last 7 days)
+    const sevenDaysAgo = Date.now() - 7 * 24 * 3600 * 1000;
+    const spikes = filteredData.filter(r => 
+      r.pct_above_trailing_avg !== null && 
+      Math.abs(r.pct_above_trailing_avg) >= 25 &&
+      new Date(r.recorded_at).getTime() >= sevenDaysAgo
+    ).length;
+
+    return {
+      ...baseKpis,
+      properties_tracked: uniqueProps,
+      spikes_7d: spikes
+    };
+  }, [baseKpis, filteredData]);
 
   const statusColor = (s: string | null) =>
     s === "success" || s === "completed" ? "text-green-500" : "";
@@ -92,9 +158,8 @@ export default function RealEstatePage() {
           </h1>
           <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
             Live nightly rate intelligence across short-term rental markets.
-            Tracks competitor pricing, detects rate spikes, and surfaces booking
-            availability in real time by checking each listing up to 4× daily.
-            Built to track NYC/Miami rate dynamics around the 2026 World Cup Final. Expanding to new markets is a config change, not a rebuild.
+            We track competitor pricing, detect rate volatility, and surface booking availability in real time by checking each listing up to 4× daily.
+            Built to track NYC and Miami rate dynamics ahead of the 2026 World Cup Final. Expanding to new markets is a config change and not a full rebuild.
           </p>
         </div>
 
@@ -129,13 +194,28 @@ export default function RealEstatePage() {
         {/* Main Dashboard Widget */}
         <ErrorBoundary fallbackMessage="Failed to load Rate Monitor dashboard.">
           <div className="border border-border rounded-lg overflow-hidden bg-card/30">
-            <RealEstateDemo />
+            <RealEstateDemo 
+              data={filteredData} 
+              loading={loading}
+              filters={{
+                platform: filterPlatform,
+                tracked: filterTracked,
+                bedrooms: filterBedrooms,
+                startDate: filterStartDate,
+                endDate: filterEndDate
+              }}
+              onFilterChange={setFilter}
+            />
           </div>
         </ErrorBoundary>
 
         {/* Property Map */}
         <ErrorBoundary fallbackMessage="Failed to load property map.">
-          <PropertyMap totalProperties={kpis?.properties_tracked} />
+          <PropertyMap 
+            data={filteredData}
+            loading={loading}
+            totalProperties={kpis?.properties_tracked} 
+          />
         </ErrorBoundary>
 
         {/* Service Tier Section */}

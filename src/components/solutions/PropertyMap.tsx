@@ -5,10 +5,9 @@
  * Token: VITE_MAP_BOX_API_KEY env var.
  * Pattern: useRef + useEffect (official Mapbox React pattern from skill).
  */
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { supabase } from "@/lib/supabaseClient";
 import { MapPin } from "lucide-react";
 
 interface PropertyPoint {
@@ -26,52 +25,30 @@ interface PropertyPoint {
 }
 
 interface PropertyMapProps {
+  data: PropertyPoint[];
+  loading: boolean;
   totalProperties?: number;
 }
 
-export default function PropertyMap({ totalProperties }: PropertyMapProps) {
+export default function PropertyMap({ data, loading, totalProperties }: PropertyMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
 
-  const [properties, setProperties] = useState<PropertyPoint[]>([]);
-  const [loading, setLoading] = useState(true);
   const [mapReady, setMapReady] = useState(false);
 
-  // ── Fetch property data from v_rate_volatility ───────────────────────────
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("v_rate_volatility")
-          .select("property_id, property_name, url, market, platform, latitude, longitude, nightly_rate, is_available, currency, pct_above_trailing_avg")
-          .not("latitude", "is", null)
-          .not("longitude", "is", null)
-          .order("recorded_at", { ascending: false });
-
-        if (error) {
-          console.error("PropertyMap: error fetching data:", error);
-          return;
-        }
-
-        // Deduplicate to latest row per property
-        const seen = new Set<string>();
-        const unique: PropertyPoint[] = [];
-        for (const row of (data as unknown as PropertyPoint[])) {
-          if (!seen.has(row.property_id)) {
-            seen.add(row.property_id);
-            unique.push(row);
-          }
-        }
-        setProperties(unique);
-      } catch (e) {
-        console.error("PropertyMap: unexpected error:", e);
-      } finally {
-        setLoading(false);
+  // Deduplicate properties (one marker per location)
+  const properties = useMemo(() => {
+    const seen = new Set<string>();
+    const unique: PropertyPoint[] = [];
+    for (const row of data) {
+      if (!seen.has(row.property_id) && row.latitude !== null && row.longitude !== null) {
+        seen.add(row.property_id);
+        unique.push(row);
       }
-    };
-    void fetch();
-  }, []);
+    }
+    return unique;
+  }, [data]);
 
   // ── Initialise Mapbox map ────────────────────────────────────────────────
   useEffect(() => {
@@ -114,13 +91,21 @@ export default function PropertyMap({ totalProperties }: PropertyMapProps) {
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
 
-    properties.forEach((prop) => {
+    properties.forEach((prop: PropertyPoint) => {
       const isSpike = prop.pct_above_trailing_avg !== null && prop.pct_above_trailing_avg >= 25;
       const isUnavailable = !prop.is_available;
 
+      // Wrapper with 0 width/height ensures Mapbox calculates 0 offset,
+      // and we manually position the marker center using left/top on the inner container.
       const el = document.createElement("div");
-      el.className = "property-map-marker";
-      el.style.cssText = `
+      el.style.cssText = "width: 0px; height: 0px;";
+
+      const markerContainer = document.createElement("div");
+      markerContainer.className = "property-map-marker";
+      markerContainer.style.cssText = `
+        position: absolute;
+        left: -14px;
+        top: -14px;
         width: 28px;
         height: 28px;
         display: flex;
@@ -143,10 +128,12 @@ export default function PropertyMap({ totalProperties }: PropertyMapProps) {
         transition: transform 0.15s ease-out;
       `;
       inner.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="${isSpike ? "#f59e0b" : isUnavailable ? "#6b7280" : "#f97316"}"><circle cx="12" cy="12" r="6"/></svg>`;
-      el.appendChild(inner);
+      
+      markerContainer.appendChild(inner);
+      el.appendChild(markerContainer);
 
-      el.addEventListener("mouseenter", () => { inner.style.transform = "scale(1.2)"; });
-      el.addEventListener("mouseleave", () => { inner.style.transform = "scale(1)"; });
+      markerContainer.addEventListener("mouseenter", () => { inner.style.transform = "scale(1.2)"; });
+      markerContainer.addEventListener("mouseleave", () => { inner.style.transform = "scale(1)"; });
 
       // Popup content
       const rateStr = prop.nightly_rate != null
@@ -179,7 +166,7 @@ export default function PropertyMap({ totalProperties }: PropertyMapProps) {
     // Auto-fit bounds to all markers
     if (properties.length > 1) {
       const bounds = new mapboxgl.LngLatBounds();
-      properties.forEach(p => bounds.extend([p.longitude, p.latitude]));
+      properties.forEach((p: PropertyPoint) => bounds.extend([p.longitude, p.latitude]));
       mapRef.current.fitBounds(bounds, { padding: 60, maxZoom: 13, duration: 800 });
     } else if (properties.length === 1) {
       mapRef.current.flyTo({ center: [properties[0].longitude, properties[0].latitude], zoom: 12 });
