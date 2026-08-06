@@ -118,16 +118,6 @@ export default function RealEstateDemo({ data, loading }: RealEstateDemoProps) {
     }])).values()
   ), [data]);
 
-  // Filter options
-  const uniqueProperties = useMemo(() => Array.from(
-    new Map(data.map((r) => [r.property_id, {
-      id: r.property_id,
-      name: r.property_name,
-      market: r.market,
-      platform: r.platform,
-      bedrooms: r.bedrooms,
-    }])).values()
-  ), [data]);
 
   // Apply filtered properties (data is already filtered by parent)
   const filteredProperties = uniqueProperties;
