@@ -83,18 +83,9 @@ function Sparkline({ prices }: { prices: number[] }) {
 export interface RealEstateDemoProps {
   data: RateRow[];
   loading: boolean;
-  filters: {
-    platform: string;
-    tracked: string;
-    bedrooms: string;
-    startDate: string | null;
-    endDate: string | null;
-    market?: string;
-  };
-  onFilterChange: (key: string, value: string | null) => void;
 }
 
-export default function RealEstateDemo({ data, loading, filters, onFilterChange }: RealEstateDemoProps) {
+export default function RealEstateDemo({ data, loading }: RealEstateDemoProps) {
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
 
   // Initialize selected property
@@ -128,17 +119,18 @@ export default function RealEstateDemo({ data, loading, filters, onFilterChange 
   ), [data]);
 
   // Filter options
-  const markets = useMemo(() => Array.from(new Set(uniqueProperties.map(p => p.market).filter(Boolean))).sort(), [uniqueProperties]);
-  const platforms = useMemo(() => Array.from(new Set(uniqueProperties.map(p => p.platform).filter(Boolean))).sort(), [uniqueProperties]);
-  const bedroomOptions = useMemo(() => Array.from(new Set(uniqueProperties.map(p => p.bedrooms).filter((b): b is number => b !== null))).sort((a,b)=>a-b), [uniqueProperties]);
+  const uniqueProperties = useMemo(() => Array.from(
+    new Map(data.map((r) => [r.property_id, {
+      id: r.property_id,
+      name: r.property_name,
+      market: r.market,
+      platform: r.platform,
+      bedrooms: r.bedrooms,
+    }])).values()
+  ), [data]);
 
-  // Filtered latest rows per property
-  const filteredProperties = useMemo(() => uniqueProperties.filter(p => {
-    if (filters.market && filters.market !== "all" && p.market !== filters.market) return false;
-    // Data passed as props is ALREADY filtered globally. We shouldn't double-filter here, 
-    // but the dropdowns in this component are replaced by the global filters logic.
-    return true;
-  }), [uniqueProperties, filters.market]);
+  // Apply filtered properties (data is already filtered by parent)
+  const filteredProperties = uniqueProperties;
 
   const latestPerProperty = useMemo(() =>
     filteredProperties.map((p) => data.find((r) => r.property_id === p.id)!).filter(Boolean),
@@ -456,81 +448,6 @@ export default function RealEstateDemo({ data, loading, filters, onFilterChange 
           </p>
         </div>
 
-        {/* Filter controls */}
-        <div className="flex flex-wrap gap-2">
-          {markets.length > 1 && (
-            <select
-              className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              value={filters.market || "all"}
-              onChange={e => onFilterChange("market", e.target.value)}
-            >
-              <option value="all">All Markets</option>
-              {markets.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
-          )}
-          {platforms.length > 1 && (
-            <select
-              className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              value={filters.platform}
-              onChange={e => onFilterChange("platform", e.target.value)}
-            >
-              <option value="all">All Platforms</option>
-              {platforms.map(p => <option key={p} value={p}>{p}</option>)}
-            </select>
-          )}
-          {bedroomOptions.length > 1 && (
-            <select
-              className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              value={filters.bedrooms}
-              onChange={e => onFilterChange("bedrooms", e.target.value)}
-            >
-              <option value="all">All Bedrooms</option>
-              {bedroomOptions.map(b => <option key={b} value={String(b)}>{b} BR</option>)}
-            </select>
-          )}
-          
-          {/* New Tracked and Date Filters */}
-          <select
-            className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            value={filters.tracked}
-            onChange={e => onFilterChange("tracked", e.target.value)}
-          >
-            <option value="tracked">Currently Tracked</option>
-            <option value="untracked">Untracked/Removed</option>
-            <option value="all">All Historical</option>
-          </select>
-          <input 
-            type="date"
-            className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            value={filters.startDate || ""}
-            onChange={e => onFilterChange("start", e.target.value || null)}
-            title="Start Date"
-          />
-          <input 
-            type="date"
-            className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            value={filters.endDate || ""}
-            onChange={e => onFilterChange("end", e.target.value || null)}
-            title="End Date"
-          />
-
-          {(filters.market !== "all" || filters.platform !== "all" || filters.bedrooms !== "all" || filters.tracked !== "tracked" || filters.startDate || filters.endDate) && (
-            <button
-              className="text-[10px] text-muted-foreground hover:text-foreground transition-colors border border-border rounded-md px-2 py-1"
-              onClick={() => {
-                onFilterChange("market", "all");
-                onFilterChange("platform", "all");
-                onFilterChange("bedrooms", "all");
-                onFilterChange("tracked", "tracked");
-                onFilterChange("start", null);
-                onFilterChange("end", null);
-              }}
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-
         {/* Table */}
         {latestPerProperty.length > 0 ? (
           <div className="relative w-full rounded-md border border-border shadow-sm overflow-hidden">
@@ -668,8 +585,8 @@ export default function RealEstateDemo({ data, loading, filters, onFilterChange 
           <div className="flex h-32 w-full flex-col items-center justify-center rounded-md border border-border bg-card/50">
             <span className="text-xl opacity-40 mb-2">🏠</span>
             <p className="text-sm font-medium text-foreground">
-              {latestPerProperty.length === 0 && (filters.market !== "all" || filters.platform !== "all" || filters.bedrooms !== "all")
-                ? "No properties match the current filters."
+              {latestPerProperty.length === 0
+                ? "No property data matches the current filters."
                 : "No property data yet."}
             </p>
           </div>

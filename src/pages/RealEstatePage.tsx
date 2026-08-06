@@ -27,6 +27,7 @@ interface RealEstateKPIs {
 export default function RealEstatePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const filterPlatform = searchParams.get("platform") || "all";
+  const filterMarket = searchParams.get("market") || "all";
   const filterTracked = searchParams.get("tracked") || "tracked";
   const filterStartDate = searchParams.get("start");
   const filterEndDate = searchParams.get("end");
@@ -75,10 +76,25 @@ export default function RealEstatePage() {
     void fetchData();
   }, []);
 
+  // Filter options
+  const uniqueProperties = useMemo(() => Array.from(
+    new Map(rawData.map((r) => [r.property_id, {
+      id: r.property_id,
+      market: r.market,
+      platform: r.platform,
+      bedrooms: r.bedrooms,
+    }])).values()
+  ), [rawData]);
+
+  const markets = useMemo(() => Array.from(new Set(uniqueProperties.map(p => p.market).filter(Boolean))).sort(), [uniqueProperties]);
+  const platforms = useMemo(() => Array.from(new Set(uniqueProperties.map(p => p.platform).filter(Boolean))).sort(), [uniqueProperties]);
+  const bedroomOptions = useMemo(() => Array.from(new Set(uniqueProperties.map(p => p.bedrooms).filter((b): b is number => b !== null))).sort((a,b)=>a-b), [uniqueProperties]);
+
   // Filter data
   const filteredData = useMemo(() => {
     return rawData.filter((r) => {
       if (filterPlatform !== "all" && r.platform !== filterPlatform) return false;
+      if (filterMarket && filterMarket !== "all" && r.market !== filterMarket) return false;
       if (filterTracked === "tracked" && r.is_active === false) return false;
       if (filterTracked === "untracked" && r.is_active === true) return false;
       if (filterBedrooms !== "all" && String(r.bedrooms) !== filterBedrooms) return false;
@@ -90,7 +106,7 @@ export default function RealEstatePage() {
       }
       return true;
     });
-  }, [rawData, filterPlatform, filterTracked, filterStartDate, filterEndDate, filterBedrooms]);
+  }, [rawData, filterPlatform, filterMarket, filterTracked, filterStartDate, filterEndDate, filterBedrooms]);
 
   // Derive KPIs from filtered data
   const kpis = useMemo(() => {
@@ -163,6 +179,102 @@ export default function RealEstatePage() {
           </p>
         </div>
 
+        {/* Global Filters */}
+        <div className="flex flex-col gap-2 p-4 border border-border bg-card/50 rounded-lg shadow-sm">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Global Filters</span>
+          <div className="flex flex-wrap gap-3">
+            {markets.length > 1 && (
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] text-muted-foreground">Market</label>
+                <select
+                  className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  value={filterMarket || "all"}
+                  onChange={e => setFilter("market", e.target.value)}
+                >
+                  <option value="all">All Markets</option>
+                  {markets.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+            )}
+            {platforms.length > 1 && (
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] text-muted-foreground">Platform</label>
+                <select
+                  className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  value={filterPlatform}
+                  onChange={e => setFilter("platform", e.target.value)}
+                >
+                  <option value="all">All Platforms</option>
+                  {platforms.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+            )}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted-foreground">Status</label>
+              <select
+                className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                value={filterTracked}
+                onChange={e => setFilter("tracked", e.target.value)}
+              >
+                <option value="tracked">Currently Tracked</option>
+                <option value="untracked">Untracked/Removed</option>
+                <option value="all">All Historical</option>
+              </select>
+            </div>
+            {bedroomOptions.length > 1 && (
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] text-muted-foreground">Bedrooms</label>
+                <select
+                  className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  value={filterBedrooms}
+                  onChange={e => setFilter("bedrooms", e.target.value)}
+                >
+                  <option value="all">All Bedrooms</option>
+                  {bedroomOptions.map(b => <option key={b} value={String(b)}>{b} BR</option>)}
+                </select>
+              </div>
+            )}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted-foreground">Stay Dates</label>
+              <div className="flex items-center gap-1">
+                <input 
+                  type="date"
+                  className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  value={filterStartDate || ""}
+                  onChange={e => setFilter("start", e.target.value || null)}
+                  title="Start Date"
+                />
+                <span className="text-muted-foreground text-xs">to</span>
+                <input 
+                  type="date"
+                  className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  value={filterEndDate || ""}
+                  onChange={e => setFilter("end", e.target.value || null)}
+                  title="End Date"
+                />
+              </div>
+            </div>
+            
+            {(filterPlatform !== "all" || filterBedrooms !== "all" || filterTracked !== "tracked" || filterStartDate || filterEndDate) && (
+            <div className="flex flex-col gap-1 justify-end">
+                <button
+                  className="text-[10px] text-muted-foreground hover:text-foreground transition-colors border border-border rounded-md px-2 py-1 h-[26px]"
+                  onClick={() => {
+                    setFilter("market", "all");
+                    setFilter("platform", "all");
+                    setFilter("bedrooms", "all");
+                    setFilter("tracked", "tracked");
+                    setFilter("start", null);
+                    setFilter("end", null);
+                  }}
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* KPI Cards */}
         <ErrorBoundary fallbackMessage="Failed to load Real Estate KPIs.">
           {loading || !kpis ? renderSkeleton(4) : (
@@ -197,14 +309,6 @@ export default function RealEstatePage() {
             <RealEstateDemo 
               data={filteredData} 
               loading={loading}
-              filters={{
-                platform: filterPlatform,
-                tracked: filterTracked,
-                bedrooms: filterBedrooms,
-                startDate: filterStartDate,
-                endDate: filterEndDate
-              }}
-              onFilterChange={setFilter}
             />
           </div>
         </ErrorBoundary>
