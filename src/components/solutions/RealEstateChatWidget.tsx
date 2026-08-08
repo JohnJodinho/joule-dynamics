@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Bot, Send, X, AlertCircle, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 interface Message {
@@ -28,18 +29,14 @@ export default function RealEstateChatWidget() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
+  const [isErrorState, setIsErrorState] = useState(false);
 
   // Browser-scoped persistent session ID
-  const sessionIdRef = useRef<string>('');
+  const [sessionId] = useState(() => crypto.randomUUID());
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // Generate UUID once for this tab's lifecycle
-    if (!sessionIdRef.current) {
-      sessionIdRef.current = crypto.randomUUID();
-    }
-  }, []);
+
 
   useEffect(() => {
     if (isOpen) {
@@ -55,6 +52,7 @@ export default function RealEstateChatWidget() {
     setMessages((prev) => [...prev, userMsg]);
     if (!queryToSend) setInput('');
     setLoading(true);
+    setIsErrorState(false);
 
     // Capture URL SearchParam Filters to send to backend
     const activeFilters = {
@@ -72,7 +70,7 @@ export default function RealEstateChatWidget() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: text,
-          session_id: sessionIdRef.current,
+          session_id: sessionId,
           context: activeFilters
         })
       });
@@ -83,20 +81,22 @@ export default function RealEstateChatWidget() {
 
       const data = await response.json();
       
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: 'assistant',
-          text: data.reply || "I couldn't parse the response. Please try again.",
-          path: data.path_used,
-          suggested_actions: data.suggested_actions
-        }
-      ]);
+      if (data.path_used === "ERROR") {
+        setIsErrorState(true);
+        // Remove the optimistic user message if we want, or just leave it.
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: 'assistant',
+            text: data.reply || "I couldn't parse the response. Please try again.",
+            path: data.path_used,
+            suggested_actions: data.suggested_actions
+          }
+        ]);
+      }
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { sender: 'assistant', text: "Unable to reach the intelligence layer. Please try again shortly." }
-      ]);
+      setIsErrorState(true);
     } finally {
       setLoading(false);
     }
@@ -139,8 +139,61 @@ export default function RealEstateChatWidget() {
           </div>
 
           {/* Messages Feed */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg, idx) => (
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 relative">
+            {isErrorState && (
+              <div className="absolute inset-0 z-10 bg-slate-900/80 backdrop-blur-[1px] flex flex-col items-center justify-center p-6 text-center">
+                <AlertCircle className="w-8 h-8 text-amber-500 mb-3" />
+                <p className="text-sm font-medium text-slate-200">Real Estate Intelligence Layer experienced an issue. Resolving...</p>
+                <button 
+                  onClick={() => setIsErrorState(false)} 
+                  className="mt-4 text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md transition-colors"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+            
+            {messages.map((msg, idx) => {
+              const isLastMessage = idx === messages.length - 1;
+              
+              // Format data and dates
+              let formattedText = msg.text;
+              if (msg.sender === 'assistant') {
+                formattedText = formattedText.replace(/\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?\b/g, (_match) => {
+                  try {
+                    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(_match));
+                  } catch { return _match; }
+                });
+                
+                formattedText = formattedText.replace(/(\$?)(\d+)\.(\d{3,})(%?)/g, (_match, dollar, whole, frac, percent) => {
+                  const num = parseFloat(`${whole}.${frac}`);
+                  if (!dollar && !percent) {
+                    return `$${num.toFixed(2)}`;
+                  }
+                  return `${dollar}${num.toFixed(2)}${percent}`;
+                });
+              }
+
+              const markdownComponents: Components = {
+                table: ({ children, ...props }) => (
+                  <div className="w-full overflow-x-auto my-3 border border-slate-700/50 rounded-md">
+                    <table className="w-full text-left border-collapse text-xs whitespace-nowrap" {...props}>
+                      {children}
+                    </table>
+                  </div>
+                ),
+                th: ({ children, ...props }) => (
+                  <th className="p-2 border-b border-slate-700/50 bg-slate-800/30 font-semibold" {...props}>{children}</th>
+                ),
+                td: ({ children, ...props }) => (
+                  <td className="p-2 border-b border-slate-700/30" {...props}>{children}</td>
+                ),
+                a: ({ children, href, ...props }) => (
+                  <a href={href} target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 underline" {...props}>{children}</a>
+                )
+              };
+
+              return (
               <div
                 key={idx}
                 className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
@@ -153,23 +206,21 @@ export default function RealEstateChatWidget() {
                   }`}
                 >
                   {msg.sender === 'assistant' ? (
-                    <div className="prose prose-invert prose-sm max-w-none prose-p:leading-snug prose-a:text-emerald-400 hover:prose-a:text-emerald-300">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {msg.text}
+                    <div className="prose prose-invert prose-sm max-w-none prose-p:leading-snug">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={markdownComponents}
+                      >
+                        {formattedText}
                       </ReactMarkdown>
                     </div>
                   ) : (
-                    <p className="whitespace-pre-wrap">{msg.text}</p>
-                  )}
-                  {msg.path && (
-                    <span className="inline-block mt-2 text-[10px] uppercase tracking-wider text-slate-400 font-mono">
-                      Route: {msg.path}
-                    </span>
+                    <p className="whitespace-pre-wrap">{formattedText}</p>
                   )}
                 </div>
                 
-                {/* Suggested Actions */}
-                {msg.sender === 'assistant' && msg.suggested_actions && msg.suggested_actions.length > 0 && (
+                {/* Suggested Actions - only on last message */}
+                {msg.sender === 'assistant' && msg.suggested_actions && msg.suggested_actions.length > 0 && isLastMessage && (
                   <div className="flex flex-wrap gap-2 mt-2 max-w-[90%]">
                     {msg.suggested_actions.map((action, actionIdx) => (
                       <button
@@ -184,7 +235,8 @@ export default function RealEstateChatWidget() {
                   </div>
                 )}
               </div>
-            ))}
+            );
+          })}
             {loading && (
               <div className="flex justify-start">
                 <div className="bg-slate-800 border border-slate-700 text-slate-400 p-3 rounded-lg text-xs animate-pulse rounded-bl-sm">
