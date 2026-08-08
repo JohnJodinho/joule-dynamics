@@ -55,7 +55,8 @@ export default function ChatDemo() {
     setLoading(true);
 
     try {
-      const apiUrl = import.meta.env.VITE_CHAT_API_URL ?? "https://johnalbarkaibrahim-sentimentscope.hf.space/api/rag/chat";
+      const baseUrl = import.meta.env.VITE_BACKEND_URL ?? "https://johnalbarkaibrahim-sentimentscope.hf.space";
+      const apiUrl = `${baseUrl}/api/rag/chat`;
       const response = await fetch(
         apiUrl,
         {

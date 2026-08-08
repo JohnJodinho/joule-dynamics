@@ -12,6 +12,7 @@ import CredentialFooter from "@/components/layout/CredentialFooter";
 import RealEstateDemo from "@/components/solutions/RealEstateDemo";
 import PropertyMap from "@/components/solutions/PropertyMap";
 import ServiceTierSection from "@/components/solutions/ServiceTierSection";
+import RealEstateChatWidget from "@/components/solutions/RealEstateChatWidget";
 import ScrapeHealthStrip from "@/components/solutions/ScrapeHealthStrip";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { Building2 } from "lucide-react";
@@ -329,9 +330,11 @@ export default function RealEstatePage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         <ScrapeHealthStrip />
+        
+        <RealEstateChatWidget />
+        
+        <CredentialFooter />
       </div>
-
-      <CredentialFooter />
     </>
   );
 }
